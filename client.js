@@ -2,13 +2,12 @@ import { VideoAnnotator } from './annotations/video-annotator.js';
 
 let inwardAnnotator, outwardAnnotator;
 
-function initVideoAnnotators() {
-    const inwardVideo = document.getElementById('inward');
-    const outwardVideo = document.getElementById('outward');
+// Get video and canvas elements
+const inwardVideo = document.getElementById('inward');
+const outwardVideo = document.getElementById('outward');
+const inwardKonvaDiv = document.getElementById('inward-konva-div');
+const outwardKonvaDiv = document.getElementById('outward-konva-div');
 
-    const inwardKonvaDiv = document.getElementById('inward-konva-div');
-    const outwardKonvaDiv = document.getElementById('outward-konva-div');
-    
     // Create Konva stages - client handles sizing and resizing
     const inwardStage = new Konva.Stage({
         container: inwardKonvaDiv,
@@ -21,9 +20,45 @@ function initVideoAnnotators() {
         width: outwardVideo.offsetWidth,
         height: outwardVideo.offsetHeight,
     });
-    
+
+function setResizeListenersForKonvaResizing() {
+
+    // Add event listeners for video size changes
+    function updateInwardStageSize() {
+        inwardStage.width(inwardVideo.offsetWidth);
+        inwardStage.height(inwardVideo.offsetHeight);
+    }
+
+    function updateOutwardStageSize() {
+        outwardStage.width(outwardVideo.offsetWidth);
+        outwardStage.height(outwardVideo.offsetHeight);
+    }
+
+    // Listen for video resize events
+    inwardVideo.addEventListener('loadedmetadata', updateInwardStageSize);
+    outwardVideo.addEventListener('loadedmetadata', updateOutwardStageSize);
+
+    // Use ResizeObserver to watch for actual video element size changes
+    const inwardResizeObserver = new ResizeObserver(() => {
+        updateInwardStageSize();
+    });
+    inwardResizeObserver.observe(inwardVideo);
+
+    const outwardResizeObserver = new ResizeObserver(() => {
+        updateOutwardStageSize();
+    });
+    outwardResizeObserver.observe(outwardVideo);
+};
+
+function loadMetadata(){
+    //placeholder for metadata loading logic
+
     // Create metadata (placeholder)
-    const metadata = { startTime: Date.now() };
+    return { startTime: Date.now() };
+}
+function initVideoAnnotators() {
+
+    const metadata = loadMetadata();
     
     // Create annotators - they handle layer management and annotations
     inwardAnnotator = new VideoAnnotator(
@@ -52,6 +87,7 @@ function syncPlay() {
     outward.play();
 }
 
+setResizeListenersForKonvaResizing();
 // Global functions for testing
 window.syncPlay = syncPlay;
 
