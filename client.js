@@ -1,4 +1,4 @@
-import { VideoAnnotator } from './video-annotator.js';
+import { VideoAnnotator } from './annotations/video-annotator.js';
 
 let inwardAnnotator, outwardAnnotator;
 
