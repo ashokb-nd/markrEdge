@@ -1,13 +1,16 @@
 /**
  * VideoAnnotator for Konva.js - Manages layers and annotations
- * Pluggable component for adding visual annotations to video elements
+ * 1. konvastage resizing, aligning with video element is not the responsibility of this class.
+ * 2. That should be handled by the client code that uses this class.
+ * 3. only handles annotations.
  */
+
+
 
 // Import visualizers
 import { Debug } from "./visual-components/debug.js";
 // Add more visualizers here as needed
-// import { Timestamp } from "./visual-components/timestamp.js";
-// import { BoundingBox } from "./visual-components/bounding-box.js";
+
 
 // Auto-generate visualizer map from classes
 const AVAILABLE_VISUALIZERS = [
@@ -26,8 +29,14 @@ class VideoAnnotator {
     this.visualizerNames = visualizerNames;
     this.visualizers = [];
     
-    // Cache startTime from metadata for performance
-    this.startTime = metadata.startTime || null;
+    // starting epoch time for video to align the annotations with the video playback
+    if (metadata.startTime) {
+      this._videoStartEpochTimeMS = metadata.startTime;
+    } else {
+      this._videoStartEpochTimeMS = Date.now(); // Fallback to current time if not provided
+      console.warn("No startTime provided in metadata, using current time as fallback.");
+    }
+
     this._lastRenderTime = -1;
 
     // Default options with overrides
@@ -38,10 +47,7 @@ class VideoAnnotator {
     
     // Create and manage layers internally
     this._initLayers();
-    
-    // Initialize visualizers based on categories
     this._initializeVisualizers(this.visualizerNames);
-    
     this._setupEventListeners();
   }
 
@@ -58,7 +64,6 @@ class VideoAnnotator {
   }
 
   _initializeVisualizers(visualizerNames) {
-    console.log('Initializing visualizers:', visualizerNames);
     
     for (const category of visualizerNames) {
       const VisualizerClass = VISUALIZER_MAP[category];
@@ -69,128 +74,75 @@ class VideoAnnotator {
       }
 
       // Pass metadata directly to each visualizer
-      const visualizer = new VisualizerClass(this.metadata);
-      
-      // Initialize with dynamic layer and stage info (not stage object)
-      if (visualizer.init) {
-        const stageInfo = {
-          width: this.stage.width(),
-          height: this.stage.height()
-        };
-        visualizer.init(this.dynamicLayer, stageInfo);
-      }
-      
-      console.log(`Initialized visualizer for category: ${category}`, visualizer);
+      // also static and dynamic layers
+      const visualizer = new VisualizerClass( this.staticLayer,
+                                              this.dynamicLayer,
+                                              this.metadata
+                                            );
       this.visualizers.push(visualizer);
     }
   }
 
   _setupEventListeners() {
     // Update on video time change
+    // later change it to use  "requestVideoFrameCallback" method
     this.video.addEventListener("timeupdate", () => {
       this._render();
     });
 
     // Handle resize
-    window.addEventListener('resize', () => {
-      this._onResize();
-    });
+    // window.addEventListener('resize', () => {
+    //   this._onResize();
+    // });
   }
 
-  _onResize() {
-    // Create stage info object
-    const stageInfo = {
-      width: this.stage.width(),
-      height: this.stage.height()
-    };
-    
-    // Notify visualizers of resize events with stage info, not stage object
-    for (const visualizer of this.visualizers) {
-      if (visualizer.onResize) {
-        visualizer.onResize(stageInfo);
-      }
-    }
-    // Redraw both layers
-    this.staticLayer.batchDraw();
-    this.dynamicLayer.batchDraw();
-  }
+  // _onResize() {
+  //   // Create stage info object
+  //   const stageInfo = {
+  //     width: this.stage.width(),
+  //     height: this.stage.height()
+  //   };
+  //   
+  //   // Notify visualizers of resize events with stage info, not stage object
+  //   for (const visualizer of this.visualizers) {
+  //     if (visualizer.onResize) {
+  //       visualizer.onResize(stageInfo);
+  //     }
+  //   }
+  //   // Redraw both layers
+  //   this.staticLayer.batchDraw();
+  //   this.dynamicLayer.batchDraw();
+  // }
 
+  //this is called for every time the video time changes
   _render() {
-    const currentTime = this.video.currentTime;
-    
-    if (this._lastRenderTime === currentTime) return;
-    this._lastRenderTime = currentTime;
-    
-    const epochTime = this.getEpochTime(currentTime);
+    const epochTime = this.getCurrentEpochTimeInVideo();
     const videoRect = this._getVideoRect();
-    
-    // Update visualizers - they decide which layer to use
-    for (const visualizer of this.visualizers) {
-      if (visualizer.display) {
-        // Pass both layers so visualizer can choose appropriate one
-        visualizer.display({
-          staticLayer: this.staticLayer,
-          dynamicLayer: this.dynamicLayer
-        }, epochTime, videoRect, currentTime);
-      }
-    }
-    
-    this._onTimeUpdate(currentTime);
+
+    if (this._lastRenderTime === epochTime){console.log("skipping render as last render time is same as current epoch time"); return;}
+    this._lastRenderTime = epochTime;
+
+    this.visualizers.forEach(visualizer => {visualizer.display(epochTime, videoRect);});
   }
 
   _getVideoRect() {
+    // size of video at present time in Browser in pixels
     return {
-      width: this.video.videoWidth || this.video.offsetWidth,
-      height: this.video.videoHeight || this.video.offsetHeight
+      width: this.video.offsetWidth,
+      height: this.video.offsetHeight
     };
   }
 
-  _onTimeUpdate(currentTime) {
-    // To be overridden by implementations
-  }
-
-  addDetection(x, y, width, height, label, confidence = 1.0) {
-    const rect = new Konva.Rect({
-      x, y, width, height,
-      stroke: 'red',
-      strokeWidth: 2,
-      fill: 'transparent'
-    });
-
-    const text = new Konva.Text({
-      x, y: y - 20,
-      text: `${label} ${(confidence * 100).toFixed(0)}%`,
-      fontSize: 12,
-      fill: 'red'
-    });
-
-    // Add detections to dynamic layer (can change frequently)
-    this.dynamicLayer.add(rect);
-    this.dynamicLayer.add(text);
-    this.dynamicLayer.batchDraw();
-
-    return { rect, text };
-  }
-
-  clearDetections() {
-    // Clear both layers
-    this.staticLayer.removeChildren();
-    this.dynamicLayer.removeChildren();
-    this.staticLayer.batchDraw();
-    this.dynamicLayer.batchDraw();
-  }
-
-  getEpochTime(videoPTS = this.video.currentTime) {
-    return this.startTime ? this.startTime + (videoPTS * 1000) : Date.now();
-  }
-
-  destroy() {
-    for (const visualizer of this.visualizers) {
-      if (visualizer.destroy) {
-        visualizer.destroy();
-      }
+  getCurrentEpochTimeInVideo() {
+    if (this._videoStartEpochTimeMS) {
+      return this._videoStartEpochTimeMS + (this.video.currentTime * 1000);
+    }else{
+      throw new Error("video start epochtime is not set");
     }
   }
+
 }
 
 export { VideoAnnotator };
+
+
