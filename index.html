@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video POC</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Video Comparison</h1>
+    
+    <button class="sync-btn" onclick="syncPlay()">▶️ Play Both in Sync</button>
+    
+    <div class="container">
+        <div class="video-box">
+            <h3>Inward</h3>
+            <video id="inward" controls loop>
+                <source src="assets/inward.mp4" type="video/mp4">
+            </video>
+        </div>
+        
+        <div class="video-box">
+            <h3>Outward</h3>
+            <video id="outward" controls loop>
+                <source src="assets/outward.mp4" type="video/mp4">
+            </video>
+        </div>
+    </div>
+    
+    <script>
+        function syncPlay() {
+            const inward = document.getElementById('inward');
+            const outward = document.getElementById('outward');
+            
+            inward.currentTime = 0;
+            outward.currentTime = 0;
+            
+            inward.play();
+            outward.play();
+        }
+    </script>
+</body>
+</html>
