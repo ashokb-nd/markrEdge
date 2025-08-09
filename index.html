@@ -5,39 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video POC</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 </head>
 <body>
-    <h1>Video Comparison</h1>
     
-    <button class="sync-btn" onclick="syncPlay()">▶️ Play Both in Sync</button>
     
     <div class="container">
+
+        <!-- Inward Video -->
         <div class="video-box">
             <h3>Inward</h3>
-            <video id="inward" controls loop>
-                <source src="assets/inward.mp4" type="video/mp4">
-            </video>
+            <div class="video-wrapper">
+                <video id="inward" controls loop>
+                    <source src="assets/inward.mp4" type="video/mp4">
+                </video>
+                <div id="inward-canvas"></div>
+            </div>
         </div>
         
+        <!-- Outward Video -->
         <div class="video-box">
             <h3>Outward</h3>
-            <video id="outward" controls loop>
-                <source src="assets/outward.mp4" type="video/mp4">
-            </video>
+            <div class="video-wrapper">
+                <video id="outward" controls loop>
+                    <source src="assets/outward.mp4" type="video/mp4">
+                </video>
+                <div id="outward-canvas"></div>
+            </div>
         </div>
     </div>
+    <button class="sync-btn" onclick="syncPlay()">▶️</button>
     
-    <script>
-        function syncPlay() {
-            const inward = document.getElementById('inward');
-            const outward = document.getElementById('outward');
-            
-            inward.currentTime = 0;
-            outward.currentTime = 0;
-            
-            inward.play();
-            outward.play();
-        }
-    </script>
+    <script type="module" src="client.js"></script>
 </body>
 </html>
