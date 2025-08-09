@@ -1,21 +1,46 @@
 /**
  * VideoAnnotator for Konva.js - Manages layers and annotations
+ * Pluggable component for adding visual annotations to video elements
  */
+
+// Import visualizers
+import { Debug } from "./visual-components/debug.js";
+// Add more visualizers here as needed
+// import { Timestamp } from "./visual-components/timestamp.js";
+// import { BoundingBox } from "./visual-components/bounding-box.js";
+
+// Auto-generate visualizer map from classes
+const AVAILABLE_VISUALIZERS = [
+  Debug,
+  // Add more visualizers to this array
+];
+
+// Create map automatically: class name -> class reference
+const VISUALIZER_MAP = Object.fromEntries(AVAILABLE_VISUALIZERS.map(cls => [cls.name, cls]));
+
 class VideoAnnotator {
-  constructor(videoElement, konvaStage, metadata = {}) {
+  constructor(videoElement, konvaStage, metadata = {}, visualizerNames = [], options = {}) {
     this.video = videoElement;
     this.stage = konvaStage;
     this.metadata = metadata;
+    this.visualizerNames = visualizerNames;
     this.visualizers = [];
     
+    // Cache startTime from metadata for performance
     this.startTime = metadata.startTime || null;
     this._lastRenderTime = -1;
+
+    // Default options with overrides
+    this.options = {
+      debugMode: false,
+      ...options,
+    };
     
     // Create and manage layers internally
     this._initLayers();
     
-    // Initialize visualizers
-    this._initVisualizers();
+    // Initialize visualizers based on categories
+    this._initializeVisualizers(this.visualizerNames);
     
     this._setupEventListeners();
   }
@@ -32,19 +57,32 @@ class VideoAnnotator {
     this.stage.add(this.dynamicLayer);
   }
 
-  _initVisualizers() {
-    // Import and initialize visualizers based on metadata or configuration
-    // For now, we'll initialize Debug visualizer as default
-    import('./visual-components/debug.js').then(({ Debug }) => {
-      const debugVisualizer = new Debug(this.metadata);
-      if (debugVisualizer.init) {
-        // Debug visualizer uses dynamic layer for real-time updates
-        debugVisualizer.init(this.dynamicLayer, this.stage);
+  _initializeVisualizers(visualizerNames) {
+    console.log('Initializing visualizers:', visualizerNames);
+    
+    for (const category of visualizerNames) {
+      const VisualizerClass = VISUALIZER_MAP[category];
+      if (!VisualizerClass) {
+        console.warn(`Visualizer for category "${category}" not found.`);
+        console.log('Available visualizers:', Object.keys(VISUALIZER_MAP));
+        continue;
       }
-      this.visualizers.push(debugVisualizer);
-    }).catch(err => {
-      console.warn('Could not load Debug visualizer:', err);
-    });
+
+      // Pass metadata directly to each visualizer
+      const visualizer = new VisualizerClass(this.metadata);
+      
+      // Initialize with dynamic layer and stage info (not stage object)
+      if (visualizer.init) {
+        const stageInfo = {
+          width: this.stage.width(),
+          height: this.stage.height()
+        };
+        visualizer.init(this.dynamicLayer, stageInfo);
+      }
+      
+      console.log(`Initialized visualizer for category: ${category}`, visualizer);
+      this.visualizers.push(visualizer);
+    }
   }
 
   _setupEventListeners() {
@@ -60,10 +98,16 @@ class VideoAnnotator {
   }
 
   _onResize() {
-    // Notify visualizers of resize events
+    // Create stage info object
+    const stageInfo = {
+      width: this.stage.width(),
+      height: this.stage.height()
+    };
+    
+    // Notify visualizers of resize events with stage info, not stage object
     for (const visualizer of this.visualizers) {
       if (visualizer.onResize) {
-        visualizer.onResize(this.stage);
+        visualizer.onResize(stageInfo);
       }
     }
     // Redraw both layers

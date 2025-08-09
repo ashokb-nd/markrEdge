@@ -28,13 +28,15 @@ function initVideoAnnotators() {
     inwardAnnotator = new VideoAnnotator(
         inwardVideo, 
         inwardStage, 
-        metadata
+        metadata,
+        ['Debug']
     );
     
     outwardAnnotator = new VideoAnnotator(
         outwardVideo, 
         outwardStage, 
-        metadata
+        metadata,
+        ['Debug']
     );
 }
 
