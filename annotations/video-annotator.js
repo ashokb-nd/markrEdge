@@ -86,6 +86,8 @@ class VideoAnnotator {
   _setupEventListeners() {
     // Update on video time change
     // later change it to use  "requestVideoFrameCallback" method
+
+    this._render(); // on the video preview
     this.video.addEventListener("timeupdate", () => {
       this._render();
     });
