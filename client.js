@@ -72,7 +72,7 @@ function initVideoAnnotators() {
         outwardVideo, 
         outwardStage, 
         metadata,
-        ['Debug']
+        ['Header']
     );
 }
 

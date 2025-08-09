@@ -9,12 +9,14 @@
 
 // Import visualizers
 import { Debug } from "./visual-components/debug.js";
+import { Header } from "./visual-components/header.js";
 // Add more visualizers here as needed
 
 
 // Auto-generate visualizer map from classes
 const AVAILABLE_VISUALIZERS = [
   Debug,
+  Header,
   // Add more visualizers to this array
 ];
 
