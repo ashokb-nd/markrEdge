@@ -5,18 +5,19 @@ let inwardAnnotator, outwardAnnotator;
 function initVideoAnnotators() {
     const inwardVideo = document.getElementById('inward');
     const outwardVideo = document.getElementById('outward');
-    const inwardCanvas = document.getElementById('inward-canvas');
-    const outwardCanvas = document.getElementById('outward-canvas');
+
+    const inwardKonvaDiv = document.getElementById('inward-konva-div');
+    const outwardKonvaDiv = document.getElementById('outward-konva-div');
     
     // Create Konva stages - client handles sizing and resizing
     const inwardStage = new Konva.Stage({
-        container: inwardCanvas,
+        container: inwardKonvaDiv,
         width: inwardVideo.offsetWidth,
         height: inwardVideo.offsetHeight,
     });
     
     const outwardStage = new Konva.Stage({
-        container: outwardCanvas,
+        container: outwardKonvaDiv,
         width: outwardVideo.offsetWidth,
         height: outwardVideo.offsetHeight,
     });
