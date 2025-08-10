@@ -175,20 +175,19 @@ class MessageNotification {
     const cardHeight = 20;  // Even more compact
     const cardCornerRadius = 6; // Increased for modern look
     
-    // Create sleek card background
+    // Create minimal card background
     const background = new Konva.Rect({
       x: x,
       y: y,
       width: width,
       height: cardHeight,
-      fill: '#000000', // Pure black for modern look
-      stroke: 'rgba(255, 193, 7, 0.3)', // Subtle yellow border
+      fill: 'rgba(49, 74, 127, 0.7)', // Semi-transparent blue
+      stroke: 'rgba(73, 103, 165, 0.6)', // Matching blue tint for border
       strokeWidth: 1,
       cornerRadius: cardCornerRadius,
-      opacity: 0.65, // Much more transparent
-      shadowColor: 'rgba(0, 0, 0, 0.4)',
-      shadowBlur: 4,
-      shadowOffset: { x: 0, y: 2 }
+      shadowColor: 'rgba(0, 0, 0, 0.15)', // Subtle shadow
+      shadowBlur: 2,
+      shadowOffset: { x: 0, y: 1 }
     });
     
     // Create modern alert text
@@ -200,12 +199,12 @@ class MessageNotification {
       text: message,
       fontSize: 10, // Smaller, sleeker text
       fontFamily: 'Arial',
-      fontStyle: 'bold',
-      fill: '#FFFFFF', // White text for better contrast
+      fontStyle: 'normal', // Changed from bold to normal
+      fill: 'rgba(255, 255, 255, 0.9)', // Slightly transparent white for softer look
       align: 'center',
       verticalAlign: 'middle',
-      shadowColor: 'rgba(0, 0, 0, 0.8)',
-      shadowBlur: 2,
+      shadowColor: 'rgba(0, 0, 0, 0.5)', // Reduced shadow opacity
+      shadowBlur: 1, // Reduced shadow blur
       shadowOffset: { x: 0, y: 1 }
     });
     
@@ -221,40 +220,87 @@ class NotificationContainer {
   constructor() {
     this.group = new Konva.Group();
     this.notifications = [];
+    this.centerX = 0;
+    this.startY = 0;
+    this.timers = new Map(); // Store timers for auto-removal
   }
 
-  create(messages, centerX, startY) {
-    if (messages.length === 0) return this.group;
-
-    const cardPadding = 6;  // More compact padding
-    const cardSpacing = 3;  // Tighter spacing between cards
-    
-    // Calculate card width based on longest message with more refined sizing
-    const maxTextWidth = Math.max(...messages.map(message => message.length * 6.5)); // More precise calculation
-    const cardWidth = Math.min(maxTextWidth + (cardPadding * 2), 200); // Cap maximum width
-    
-    const startX = centerX - (cardWidth / 2);
-    let currentY = startY;
-
-    messages.forEach((message, index) => {
-      const notification = new MessageNotification();
-      const notificationGroup = notification.create(message, startX, currentY, cardWidth);
-      
-      this.notifications.push(notification);
-      this.group.add(notificationGroup);
-      
-      currentY += 20 + cardSpacing; // Updated to match new cardHeight
-    });
-    
+  init(centerX, startY) {
+    this.centerX = centerX;
+    this.startY = startY;
     return this.group;
   }
 
-  clear() {
+  push(messageText, duration = 5000) {
+    const cardPadding = 6;
+    const cardSpacing = 3;
+    
+    // Calculate card width based on message length
+    const maxTextWidth = messageText.length * 6.5;
+    const cardWidth = Math.min(maxTextWidth + (cardPadding * 2), 200);
+    
+    const startX = this.centerX - (cardWidth / 2);
+    const currentY = this.startY + (this.notifications.length * (20 + cardSpacing));
+
+    const notification = new MessageNotification();
+    const notificationGroup = notification.create(messageText, startX, currentY, cardWidth);
+    
+    this.notifications.push(notification);
+    this.group.add(notificationGroup);
+
+    // Set timer for auto-removal
+    const timer = setTimeout(() => {
+      this.removeMessage(notification);
+    }, duration);
+
+    this.timers.set(notification, timer);
+    
+    // Redraw the layer
+    this.group.getLayer()?.batchDraw();
+    
+    return notification;
+  }
+
+  removeMessage(notification) {
+    const index = this.notifications.indexOf(notification);
+    if (index === -1) return;
+
+    // Clear the timer
+    const timer = this.timers.get(notification);
+    if (timer) {
+      clearTimeout(timer);
+      this.timers.delete(notification);
+    }
+
+    // Remove the notification
+    notification.group.destroy();
+    this.notifications.splice(index, 1);
+
+    // Reposition remaining notifications
+    const cardSpacing = 3;
+    this.notifications.forEach((notif, idx) => {
+      const newY = this.startY + (idx * (20 + cardSpacing));
+      notif.group.to({
+        y: newY,
+        duration: 0.2
+      });
+    });
+
+    this.group.getLayer()?.batchDraw();
+  }
+
+  clearAll() {
+    // Clear all timers
+    this.timers.forEach((timer) => clearTimeout(timer));
+    this.timers.clear();
+
+    // Remove all notifications
     this.notifications.forEach(notification => {
       notification.group.destroy();
     });
     this.notifications = [];
     this.group.removeChildren();
+    this.group.getLayer()?.batchDraw();
   }
 }
 
@@ -421,13 +467,19 @@ class Header extends BaseVisualizer {
       const speedBadgeGroup = this.speedBadge.create(this.data, padding, padding);
       this.headerGroup.add(speedBadgeGroup);
       
-      // Create notification cards (top-center)
-      const notificationGroup = this.notificationContainer.create(
-        this.data.alertMessages, 
+      // Initialize notification container (top-center)
+      const notificationGroup = this.notificationContainer.init(
         W / 2, // center X
         padding // start Y
       );
       this.headerGroup.add(notificationGroup);
+
+      // Add initial messages if any
+      if (this.data.alertMessages && this.data.alertMessages.length > 0) {
+        this.data.alertMessages.forEach(message => {
+          this.notificationContainer.push(message, 5000); // 5 second duration
+        });
+      }
       
       // Create timestamp (top-right)
       const timestampNode = this.timestamp.create(
