@@ -306,24 +306,13 @@ class NotificationContainer {
 
 // Modular component for Timestamp
 class Timestamp {
-  constructor() {
-    this.textNode = null;
-  }
-
-  create(epochTime, data, x, y, width) {
-    // Remove existing timestamp if any
-    if (this.textNode) {
-      this.textNode.destroy();
-    }
-    
-    const formattedDateTime = this._formatDateTime(epochTime, data);
-    
-    // Create modern, clean datetime text
+  constructor(x, y, width) {
+    // Create modern, clean datetime text with empty initial value
     this.textNode = new Konva.Text({
       x: x,
       y: y,
       width: width,
-      text: formattedDateTime,
+      text: '',
       fontSize: 11, // Reduced from 14 - much smaller
       fontFamily: 'monospace', // Monospace for better time readability
       fontStyle: 'normal',
@@ -334,22 +323,27 @@ class Timestamp {
       letterSpacing: 0.5, // Slight letter spacing for clarity
       name: 'datetime-text'
     });
-    
+  }
+
+  init(x, y, width) {
+    this.textNode.x(x);
+    this.textNode.y(y);
+    this.textNode.width(width);
     return this.textNode;
   }
 
-  update(epochTime, data) {
+  update(epochTime, timeZone) {
     if (!this.textNode) return;
     
-    const formattedDateTime = this._formatDateTime(epochTime, data);
+    const formattedDateTime = this._formatDateTime(epochTime, timeZone);
     this.textNode.text(formattedDateTime);
   }
 
-  _formatDateTime(epochTime, data) {
+  _formatDateTime(epochTime, timeZone) {
     const date = new Date(epochTime);
     
     const timeFormatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: data.timeZone,
+      timeZone: timeZone,
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
@@ -357,7 +351,7 @@ class Timestamp {
     });
     
     const dateFormatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: data.timeZone,
+      timeZone: timeZone,
       month: '2-digit',
       day: '2-digit',
       year: '2-digit'
@@ -365,7 +359,7 @@ class Timestamp {
     
     // Get timezone abbreviation
     const timezoneFormatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: data.timeZone,
+      timeZone: timeZone,
       timeZoneName: 'short'
     });
     const timezoneParts = timezoneFormatter.formatToParts(date);
@@ -383,7 +377,7 @@ class Header extends BaseVisualizer {
     this.headerGroup = null;
     this.speedBadge = new SpeedBadge();
     this.notificationContainer = new NotificationContainer();
-    this.timestamp = new Timestamp();
+    this.timestamp = new Timestamp(0, 0, 0); // Initial values will be updated in init
   }
 
   processMetadata(metadata = {}) {
@@ -454,10 +448,8 @@ class Header extends BaseVisualizer {
         });
       }
       
-      // Create timestamp (top-right)
-      const timestampNode = this.timestamp.create(
-        epochTime,
-        this.data,
+      // Initialize timestamp position (top-right)
+      const timestampNode = this.timestamp.init(
         0, // x position
         padding, // y position
         W // Use full width to allow right alignment
@@ -475,7 +467,7 @@ class Header extends BaseVisualizer {
         timeZone: 'America/Los_Angeles'
       };
       this.speedBadge.update(this.data);
-      this.timestamp.update(epochTime, this.data);
+      this.timestamp.update(epochTime, this.data.timeZone);
       this.staticLayer.batchDraw();
     }
   }
