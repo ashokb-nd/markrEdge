@@ -14,10 +14,30 @@ class SpeedBadge {
     });
   }
 
+  //data is {currentSpeed: number, speedLimit: number, timeZone: string}
   create(data, x, y) {
     const badgeWidth = 60;  // Reduced from 80
     const badgeHeight = 60; // Reduced from 80
     const cornerRadius = 8; // Increased from 6 for more modern look
+    
+    // Set initial position
+    this.group.position({ x, y });
+    
+    this._createBadge(data, badgeWidth, badgeHeight, cornerRadius);
+    return this.group;
+  }
+
+  update(data) {
+    if (!this.group) return;
+    // Preserve current position
+    const pos = this.group.position();
+    this._createBadge(data, 60, 60, 8);
+    this.group.position(pos);
+  }
+
+  _createBadge(data, badgeWidth, badgeHeight, cornerRadius) {
+    // Clear existing children if any
+    this.group.removeChildren();
     
     // Determine speed status for color coding
     const isOverLimit = data.currentSpeed > data.speedLimit;
@@ -32,9 +52,6 @@ class SpeedBadge {
     } else {
       bgColor = '#28A745'; // Green for safe speed
     }
-    
-    // Set initial position
-    this.group.position({ x: x, y: y });
     
     // Add drag bounds function to keep within layer bounds
     this.group.dragBoundFunc(function(pos) {
@@ -378,7 +395,7 @@ class Header extends BaseVisualizer {
       location: metadata?.location || 'Highway 101',
       
       // Alert messages - dummy data for testing
-      alertMessages: metadata?.alertMessages || ["SPEED LIMIT EXCEEDED", "DRIVER ATTENTION"],
+      alertMessages: metadata?.alertMessages || ["🚨 SPEED LIMIT EXCEEDED", "👀 DRIVER ATTENTION"],
       
       // Time zone - fallback to dummy data
       timeZone: metadata?.timeZone || 'America/Los_Angeles',
@@ -425,6 +442,12 @@ class Header extends BaseVisualizer {
       this.staticLayer.add(this.headerGroup);
     } else {
       // Update timestamp (this changes frequently)
+      this.data = {
+        currentSpeed: 25,
+        speedLimit: 35,
+        timeZone: 'America/Los_Angeles'
+      };
+      this.speedBadge.update(this.data);
       this.timestamp.update(epochTime, this.data);
       this.staticLayer.batchDraw();
     }

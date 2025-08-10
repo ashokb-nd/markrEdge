@@ -65,14 +65,14 @@ function initVideoAnnotators() {
         inwardVideo, 
         inwardStage, 
         metadata,
-        ['Debug']
+        ['Debug', 'InertialBar']  // Added InertialBar to inward video
     );
     
     outwardAnnotator = new VideoAnnotator(
         outwardVideo, 
         outwardStage, 
         metadata,
-        ['Header']
+        ['Header', 'InertialBar']  // Added InertialBar to outward video
     );
 }
 
