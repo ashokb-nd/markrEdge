@@ -16,7 +16,7 @@ class SpeedBadge {
 
   //data is {currentSpeed: number, speedLimit: number, timeZone: string}
   create(data, x, y) {
-    const badgeWidth = 60;  // Reduced from 80
+    const badgeWidth = 55;  // Reduced from 80
     const badgeHeight = 60; // Reduced from 80
     const cornerRadius = 8; // Increased from 6 for more modern look
     
@@ -27,31 +27,44 @@ class SpeedBadge {
     return this.group;
   }
 
+  _computeBgColor(currentSpeed, speedLimit) {
+    const isOverLimit = currentSpeed > speedLimit;
+    const speedRatio = currentSpeed / speedLimit;
+    
+    // Dynamic background color based on speed
+    if (isOverLimit) {
+      return speedRatio > 1.2 ? '#DC3545' : '#FF6B35'; // Red or orange for speeding
+    } else if (speedRatio > 0.9) {
+      return '#FFC107'; // Yellow for approaching limit
+    }
+    return '#28A745'; // Green for safe speed
+  }
+
   update(data) {
     if (!this.group) return;
-    // Preserve current position
-    const pos = this.group.position();
-    this._createBadge(data, 60, 60, 8);
-    this.group.position(pos);
+    
+    const isOverLimit = data.currentSpeed > data.speedLimit;
+    const bgColor = this._computeBgColor(data.currentSpeed, data.speedLimit);
+    
+    // Find and update existing elements
+    const background = this.group.findOne('.badge-background');
+    const speedText = this.group.findOne('.current-speed');
+    const limitText = this.group.findOne('.speed-limit');
+    
+    if (background) background.fill(bgColor);
+    if (speedText) speedText.text(data.currentSpeed.toString());
+    if (limitText) {
+      limitText.text(`LIMIT ${data.speedLimit}`);
+      limitText.fill(isOverLimit ? '#FFE6E6' : 'rgba(255, 255, 255, 0.9)');
+    }
   }
 
   _createBadge(data, badgeWidth, badgeHeight, cornerRadius) {
     // Clear existing children if any
     this.group.removeChildren();
     
-    // Determine speed status for color coding
     const isOverLimit = data.currentSpeed > data.speedLimit;
-    const speedRatio = data.currentSpeed / data.speedLimit;
-    
-    // Dynamic background color based on speed
-    let bgColor = '#2C2C2C'; // Default gray
-    if (isOverLimit) {
-      bgColor = speedRatio > 1.2 ? '#DC3545' : '#FF6B35'; // Red or orange for speeding
-    } else if (speedRatio > 0.9) {
-      bgColor = '#FFC107'; // Yellow for approaching limit
-    } else {
-      bgColor = '#28A745'; // Green for safe speed
-    }
+    const bgColor = this._computeBgColor(data.currentSpeed, data.speedLimit);
     
     // Add drag bounds function to keep within layer bounds
     this.group.dragBoundFunc(function(pos) {
@@ -81,10 +94,11 @@ class SpeedBadge {
       height: badgeHeight,
       fill: bgColor,
       cornerRadius: cornerRadius,
-      opacity: 0.75, // Much more transparent for overlay
+      opacity: 0.7, // More transparent to match other overlay elements
       shadowColor: 'rgba(0, 0, 0, 0.2)',
       shadowBlur: 3,
-      shadowOffset: { x: 0, y: 1 }
+      shadowOffset: { x: 0, y: 1 },
+      name: 'badge-background' // Add name for easy finding
     });
     
     // Create subtle inner border for depth
@@ -113,15 +127,16 @@ class SpeedBadge {
       width: badgeWidth,
       height: badgeHeight * 0.35,
       text: data.currentSpeed.toString(),
-      fontSize: 18, // Increased from 16 for better readability
+      fontSize: 16, // Increased from 16 for better readability
       fontFamily: 'Arial Black', // Bolder font
-      fontStyle: 'bold',
+      // fontStyle: 'bold',
       fill: '#ffffff',
       align: 'center',
       verticalAlign: 'middle',
       shadowColor: 'rgba(0, 0, 0, 0.7)', // Stronger text shadow for better visibility
       shadowBlur: 3,
-      shadowOffset: { x: 0, y: 1 }
+      shadowOffset: { x: 0, y: 1 },
+      name: 'current-speed' // Add name for easy finding
     });
     
     // Create "mph" text with refined styling
@@ -151,7 +166,8 @@ class SpeedBadge {
       fontStyle: 'bold',
       fill: isOverLimit ? '#FFE6E6' : 'rgba(255, 255, 255, 0.9)',
       align: 'center',
-      verticalAlign: 'middle'
+      verticalAlign: 'middle',
+      name: 'speed-limit' // Add name for easy finding
     });
     
     this.group.add(background);
