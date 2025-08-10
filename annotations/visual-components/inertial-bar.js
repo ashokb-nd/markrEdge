@@ -362,6 +362,100 @@ class GraphLabels {
   }
 }
 
+// Modular component for emoji markers
+class MarkerManager {
+  constructor() {
+    this.group = new Konva.Group();
+    this.markers = new Map(); // Map markerID to marker objects
+    this.tooltips = new Map(); // Map markerID to tooltip objects
+  }
+
+  create(markerID, emoji, description, time, x, y, width, height, options) {
+    // Calculate position based on time (0-1)
+    const markerX = x + (time * width);
+    const markerY = y - 25; // Position above the graph
+
+    // Create a group for this marker and its tooltip
+    const markerGroup = new Konva.Group({
+      x: markerX - 10,
+      y: markerY
+    });
+
+    // Create emoji text
+    const emojiText = new Konva.Text({
+      text: emoji,
+      fontSize: 20,
+      align: 'center'
+    });
+
+    // Create tooltip (initially hidden)
+    const tooltip = new Konva.Label({
+      x: 0,
+      y: -30,
+      visible: false
+    });
+    // Add tooltip background
+    tooltip.add(new Konva.Tag({
+      fill: '#222831', // Modern dark background
+      stroke: '#63d3d8ff', // Accent border color
+      strokeWidth: 1,
+      padding: 16, // Increased padding for more space
+      cornerRadius: 4, // Slightly more rounded corners
+    }));
+
+    // Add tooltip text
+    tooltip.add(new Konva.Text({
+      text: description,
+      fontSize: 11,
+      fontFamily: 'Inter, Arial, sans-serif',
+      fontStyle: 'normal',
+      padding: 4, // Added padding for text
+      fill: '#f5f6fa',
+      align: 'center',
+      lineHeight: 1
+    }));
+
+    // Add hover handlers
+    emojiText.on('mouseover touchstart', () => {
+      tooltip.visible(true);
+      this.group.draw();
+    });
+
+    emojiText.on('mouseout touchend', () => {
+      tooltip.visible(false);
+      this.group.draw();
+    });
+
+    // Add elements to the marker group
+    markerGroup.add(emojiText);
+    markerGroup.add(tooltip);
+
+    // Add marker group to main group and store references
+    this.group.add(markerGroup);
+    this.markers.set(markerID, markerGroup);
+    this.tooltips.set(markerID, tooltip);
+
+    return this.group;
+  }
+
+  update(markerID, time, x, y, width, height) {
+    const markerGroup = this.markers.get(markerID);
+    if (markerGroup) {
+      const markerX = x + (time * width);
+      markerGroup.x(markerX - 10);
+      markerGroup.y(y - 25); // Position above the graph
+    }
+  }
+
+  removeMarker(markerID) {
+    const marker = this.markers.get(markerID);
+    if (marker) {
+      marker.destroy();
+      this.markers.delete(markerID);
+    }
+  }
+}
+
 class InertialBar extends BaseVisualizer {
   constructor(staticLayer, dynamicLayer, metadata = {}) {
     super(staticLayer, dynamicLayer, metadata);
@@ -371,6 +465,7 @@ class InertialBar extends BaseVisualizer {
     this.dataCurves = new DataCurves();
     this.timelineIndicator = new TimelineIndicator();
     this.graphLabels = new GraphLabels();
+    this.markerManager = new MarkerManager(); // Add marker manager
     
     // Graph options - Professional color scheme
     this.options = {
@@ -486,6 +581,56 @@ class InertialBar extends BaseVisualizer {
     };
   }
 
+  // Add a marker at the specified normalized time (0-1)
+  addMarker(markerID, emoji, description, normalizedTime) {
+    if (!this.graphGroup) return;
+    
+    const graphPos = this.graphGroup.position();
+    const graphWidth = this.graphGroup.width();
+    const graphHeight = this.graphGroup.height();
+
+    this.markerManager.create(
+      markerID,
+      emoji,
+      description,
+      normalizedTime,
+      0, // Relative to graphGroup
+      0,
+      graphWidth,
+      graphHeight,
+      this.options
+    );
+    this.staticLayer.batchDraw();
+  }
+
+  // Remove a marker by its ID
+  removeMarker(markerID) {
+    this.markerManager.removeMarker(markerID);
+    this.staticLayer.batchDraw();
+  }
+
+  // Update marker positions when graph is moved
+  updateMarkers() {
+    if (!this.graphGroup) return;
+    
+    const graphPos = this.graphGroup.position();
+    const graphWidth = this.graphGroup.width();
+    const graphHeight = this.graphGroup.height();
+
+    // Update each marker's position
+    this.markerManager.markers.forEach((marker, markerID) => {
+      const time = marker.time; // Store time when marker is created
+      this.markerManager.update(
+        markerID,
+        time,
+        0, // Relative to graphGroup
+        0,
+        graphWidth,
+        graphHeight
+      );
+    });
+  }
+
   display(epochTime, videoRect) {
     if (!this.data) return;
 
@@ -554,6 +699,10 @@ class InertialBar extends BaseVisualizer {
       // Add the unified graph group to the main group
       this.inertialBarGroup.add(this.graphGroup);
 
+      // Add marker group to the graph group
+      const markerGroup = this.markerManager.group;
+      this.graphGroup.add(markerGroup);
+
       this.staticLayer.add(this.inertialBarGroup);
 
       // Create timeline indicator in dynamic layer
@@ -564,6 +713,10 @@ class InertialBar extends BaseVisualizer {
       if (timelineLine) {
         this.dynamicLayer.add(timelineLine);
       }
+
+      // Add a demo marker at 50% of the timeline
+      this.addMarker('marker1', '🎉', 'Driver distraction alert - incab', 0.5);
+      this.addMarker('marker2', '🚗', 'Vehicle speed alert - incab \n 80 mph', 0.75);
     } else {
       // Update timeline indicator (this changes frequently)
       const videoProgress = Math.min(1.0, Math.max(0.0, epochTime / 60000)); // Assume max 60 second video
