@@ -316,36 +316,7 @@ class Timestamp {
       this.textNode.destroy();
     }
     
-    // Format date and time separately for better layout
-    const date = new Date(epochTime);
-    
-    // Create a cleaner, more modern format
-    const timeFormatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: data.timeZone,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false // 24-hour format is more professional
-    });
-    
-    const dateFormatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: data.timeZone,
-      month: '2-digit',
-      day: '2-digit',
-      year: '2-digit'
-    });
-    
-    // Get timezone abbreviation
-    const timezoneFormatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: data.timeZone,
-      timeZoneName: 'short'
-    });
-    const timezoneParts = timezoneFormatter.formatToParts(date);
-    const timezone = timezoneParts.find(part => part.type === 'timeZoneName')?.value || 'UTC';
-    
-    const timeString = timeFormatter.format(date);
-    const dateString = dateFormatter.format(date);
-    const formattedDateTime = `${dateString} ${timeString} ${timezone}`;
+    const formattedDateTime = this._formatDateTime(epochTime, data);
     
     // Create modern, clean datetime text
     this.textNode = new Konva.Text({
@@ -370,7 +341,11 @@ class Timestamp {
   update(epochTime, data) {
     if (!this.textNode) return;
     
-    // Format date and time with same modern format
+    const formattedDateTime = this._formatDateTime(epochTime, data);
+    this.textNode.text(formattedDateTime);
+  }
+
+  _formatDateTime(epochTime, data) {
     const date = new Date(epochTime);
     
     const timeFormatter = new Intl.DateTimeFormat('en-US', {
@@ -398,9 +373,7 @@ class Timestamp {
     
     const timeString = timeFormatter.format(date);
     const dateString = dateFormatter.format(date);
-    const formattedDateTime = `${dateString} ${timeString} ${timezone}`;
-    
-    this.textNode.text(formattedDateTime);
+    return `${dateString} ${timeString} ${timezone}`;
   }
 }
 
@@ -485,10 +458,12 @@ class Header extends BaseVisualizer {
       const timestampNode = this.timestamp.create(
         epochTime,
         this.data,
-        W - 200, // Increased from W - 180 to accommodate timezone
+        0, // x position
         padding, // y position
-        180 // Increased width from 160 to fit timezone
+        W // Use full width to allow right alignment
       );
+      timestampNode.align('right');
+      timestampNode.width(W - 2 * padding); // Account for padding on both sides
       this.headerGroup.add(timestampNode);
       
       this.staticLayer.add(this.headerGroup);
