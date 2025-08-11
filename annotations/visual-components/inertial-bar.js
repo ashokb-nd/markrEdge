@@ -139,7 +139,7 @@ class DataCurves {
   }
 
   create(timeValues, lateralValues, drivingValues, x, y, width, height, options) {
-    const maxG = 0.75; // Max G-force to display
+    const maxG = 0.75*9.8; // Max G-force to display
     const gScale = (height / 2) / maxG;
     const numPoints = Math.min(timeValues.length, lateralValues.length, drivingValues.length);
 
@@ -190,6 +190,9 @@ class DataCurves {
   }
 
   update(timeValues, lateralValues, drivingValues, x, y, width, height, options) {
+
+    console.log("Updating data curves with", timeValues.length, "points");
+
     if (!this.lateralCurve || !this.drivingCurve) return;
 
     const maxG = 0.75;
@@ -225,6 +228,17 @@ class TimelineIndicator {
     this.line = null;
   }
 
+  /**
+   * Calculate video progress as a value between 0 and 1
+   * @param {number} epochTime - Current time
+   * @param {number} minTime - Start time
+   * @param {number} maxTime - End time
+   * @returns {number} Progress value between 0 and 1
+   */
+  static calculateVideoProgress(epochTime, minTime, maxTime) {
+    if (maxTime === minTime) return 0;
+    return Math.min(1.0, Math.max(0.0, (epochTime - minTime) / (maxTime - minTime)));
+  }
   create(videoProgress, x, y, width, height, options) {
     const timelineX = x + (videoProgress * width);
     
@@ -466,7 +480,10 @@ class InertialBar extends BaseVisualizer {
     this.timelineIndicator = new TimelineIndicator();
     this.graphLabels = new GraphLabels();
     this.markerManager = new MarkerManager(); // Add marker manager
-    
+
+    this.minTime = null;
+    this.maxTime = null;
+
     // Graph options - Professional color scheme
     this.options = {
       Opacity: 0.95,
@@ -501,7 +518,7 @@ class InertialBar extends BaseVisualizer {
     const acc1 = [];
     const acc2 = [];
     const acc3 = [];
-    const epochtime = [];
+    const epochTimes = [];
 
     // Parse accelerometer data from sensorMetaData
     sensorMetaData.forEach(entry => {
@@ -521,7 +538,7 @@ class InertialBar extends BaseVisualizer {
                     acc1.push(x);
                     acc2.push(y);
                     acc3.push(z);
-                    epochtime.push(time);
+                    epochTimes.push(time);
                 }
             }
         }
@@ -533,53 +550,53 @@ class InertialBar extends BaseVisualizer {
     }
 
     // Convert epoch times to normalized values (0 to 1)
-    const minTime = Math.min(...epochtime);
-    const maxTime = Math.max(...epochtime);
-    const timeRange = maxTime - minTime;
-    
-    const timeValues = epochtime.map(time => (time - minTime) / timeRange);
-    
+    this.minTime = Math.min(...epochTimes);
+    this.maxTime = Math.max(...epochTimes);
+    const timeRange = this.maxTime - this.minTime;
+
+    const timeValues = epochTimes.map(time => (time - this.minTime) / timeRange);
+
     // Create inertial bar data structure
     return {
       // Raw accelerometer data arrays
       acc1: acc1,
       acc2: acc2, // Lateral acceleration
       acc3: acc3, // Driving acceleration
-      epochtime: epochtime,
+      epochTimes: epochTimes,
       timeValues: timeValues,
       lateralValues: acc2,  // Use acc2 for lateral
       drivingValues: acc3   // Use acc3 for driving
     };
   }
 
-  generateDummyData(numPoints) {
-    const timeValues = [];
-    const lateralValues = [];
-    const drivingValues = [];
-    const epochtime = [];
+  // generateDummyData(numPoints) {
+  //   const timeValues = [];
+  //   const lateralValues = [];
+  //   const drivingValues = [];
+  //   const epochtime = [];
     
-    const currentTime = Date.now();
+  //   const currentTime = Date.now();
     
-    for (let i = 0; i < numPoints; i++) {
-      const t = i / (numPoints - 1);
-      timeValues.push(t);
-      epochtime.push(currentTime + i * 100); // 100ms intervals
+  //   for (let i = 0; i < numPoints; i++) {
+  //     const t = i / (numPoints - 1);
+  //     timeValues.push(t);
+  //     epochtime.push(currentTime + i * 100); // 100ms intervals
       
-      // Generate smooth curves with some randomness
-      lateralValues.push(0.3 * Math.sin(t * 4 * Math.PI) + 0.1 * (Math.random() - 0.5));
-      drivingValues.push(0.2 * Math.cos(t * 6 * Math.PI) + 0.1 * (Math.random() - 0.5));
-    }
+  //     // Generate smooth curves with some randomness
+  //     lateralValues.push(0.3 * Math.sin(t * 4 * Math.PI) + 0.1 * (Math.random() - 0.5));
+  //     drivingValues.push(0.2 * Math.cos(t * 6 * Math.PI) + 0.1 * (Math.random() - 0.5));
+  //   }
     
-    return { 
-      timeValues, 
-      lateralValues, 
-      drivingValues, 
-      epochtime,
-      acc1: drivingValues.map(v => v + 9.8), // Add gravity component
-      acc2: lateralValues,
-      acc3: drivingValues
-    };
-  }
+  //   return { 
+  //     timeValues, 
+  //     lateralValues, 
+  //     drivingValues, 
+  //     epochtime,
+  //     acc1: drivingValues.map(v => v + 9.8), // Add gravity component
+  //     acc2: lateralValues,
+  //     acc3: drivingValues
+  //   };
+  // }
 
   // Add a marker at the specified normalized time (0-1)
   addMarker(markerID, emoji, description, normalizedTime) {
@@ -703,7 +720,11 @@ class InertialBar extends BaseVisualizer {
       this.staticLayer.add(this.inertialBarGroup);
 
       // Create timeline indicator in dynamic layer
-      const videoProgress = Math.min(1.0, Math.max(0.0, epochTime / 60000)); // Assume max 60 second video
+      // pick min, max from this.data.epochTimes
+      console.log(this.data);
+      console.log("epochTimes:", this.data.epochTimes);
+    const videoProgress = TimelineIndicator.calculateVideoProgress(epochTime, this.minTime, this.maxTime);
+      console.log("Creating timeline indicator at progress:", videoProgress, this.minTime, this.maxTime,epochTime);
       const timelineLine = this.timelineIndicator.create(
         videoProgress, this.graphGroup.x(), this.graphGroup.y(), graphWidth, graphHeight, this.options
       );
@@ -716,10 +737,15 @@ class InertialBar extends BaseVisualizer {
       this.addMarker('marker2', '🚗', 'Vehicle speed alert - incab \n 80 mph', 0.75);
     } else {
       // Update timeline indicator (this changes frequently)
-      const videoProgress = Math.min(1.0, Math.max(0.0, epochTime / 60000)); // Assume max 60 second video
+
+      // videoprogress
+    this.minTime = Math.min(...this.data.epochTimes);
+    this.maxTime = Math.max(...this.data.epochTimes);
+    const videoProgress = TimelineIndicator.calculateVideoProgress(epochTime, this.minTime, this.maxTime);
       // Use the current position of the graph group for the timeline
       const currentX = this.graphGroup.x();
       const currentY = this.graphGroup.y();
+      console.log("Updating timeline indicator:", videoProgress, currentX, currentY);
       this.timelineIndicator.update(videoProgress, currentX, currentY, graphWidth, graphHeight);
       this.dynamicLayer.draw();
     }
