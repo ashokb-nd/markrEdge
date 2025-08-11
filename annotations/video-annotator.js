@@ -97,6 +97,7 @@ class VideoAnnotator {
       // Schedule next frame
       this.video.requestVideoFrameCallback(renderFrame);
     };
+    renderFrame(); // for video preview
     // Start the frame callback loop
     this.video.requestVideoFrameCallback(renderFrame);
 
