@@ -50,16 +50,22 @@ function setResizeListenersForKonvaResizing() {
     outwardResizeObserver.observe(outwardVideo);
 };
 
-function loadMetadata(){
-    //placeholder for metadata loading logic
-
-    // Create metadata (placeholder)
-    return { startTime: Date.now() };
+function loadMetadata() {
+    return fetch('/assets/metadata.json')
+        .then(response => response.json())
+        .then(data => {
+            // console.log("Metadata loaded:", data);
+            return data;
+        })
+        .catch(error => {
+            console.error("Error loading metadata:", error);
+            return { startTime: Date.now() };
+        });
 }
 function initVideoAnnotators() {
 
-    const metadata = loadMetadata();
-    
+    loadMetadata().then(metadata => {
+
     // Create annotators - they handle layer management and annotations
     inwardAnnotator = new VideoAnnotator(
         inwardVideo, 
@@ -74,6 +80,7 @@ function initVideoAnnotators() {
         metadata,
         ['Header', 'InertialBar']  // Added InertialBar to outward video
     );
+    });
 }
 
 function syncPlay() {
