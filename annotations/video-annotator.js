@@ -90,13 +90,15 @@ class VideoAnnotator {
   }
 
   _setupEventListeners() {
-    // Update on video time change
-    // later change it to use  "requestVideoFrameCallback" method
 
-    this._render(); // on the video preview
-    this.video.addEventListener("timeupdate", () => {
+    // Use requestVideoFrameCallback for frame-accurate rendering
+    const renderFrame = () => {
       this._render();
-    });
+      // Schedule next frame
+      this.video.requestVideoFrameCallback(renderFrame);
+    };
+    // Start the frame callback loop
+    this.video.requestVideoFrameCallback(renderFrame);
 
     // Handle resize
     // window.addEventListener('resize', () => {
