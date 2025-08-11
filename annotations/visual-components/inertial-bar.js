@@ -1,23 +1,135 @@
-/**
- * Inertial Bar Vis      cornerRadius: 0,  // Removed corner rounding
-      shadowColor: 'rgba(0, 0, 0, 0.3)',
-      shadowBlur: 8,
-      shadowOffset: { x: 0, y: 4 }
+// Grapher class encapsulates all graph-related logic and elements
+class Grapher {
+  constructor(staticLayer, dynamicLayer, options, data, minTime, maxTime) {
+    this.staticLayer = staticLayer;
+    this.dynamicLayer = dynamicLayer;
+    this.options = options;
+    this.data = data;
+    this.minTime = minTime;
+    this.maxTime = maxTime;
+
+    this.graphBackground = new GraphBackground();
+    this.dataCurves = new DataCurves();
+    this.timelineIndicator = new TimelineIndicator();
+    this.graphLabels = new GraphLabels();
+    this.markerManager = new MarkerManager();
+
+    this.inertialBarGroup = null;
+    this.graphGroup = null;
+  }
+
+  createElements(graphX, graphY, graphWidth, graphHeight, epochTime) {
+    this.inertialBarGroup = new Konva.Group();
+
+    // Create a unified graph group
+    this.graphGroup = new Konva.Group({
+      x: graphX,
+      y: graphY,
+      width: graphWidth,
+      height: graphHeight,
+      draggable: true,
+      dragBoundFunc: function(pos) {
+        const stage = this.getStage();
+        const stageWidth = stage.width();
+        const stageHeight = stage.height();
+        const minX = stageWidth * 0.05;
+        const maxX = stageWidth * 0.95 - graphWidth;
+        const minY = 0;
+        const maxY = stageHeight - graphHeight - (stageHeight * 0.02);
+        return {
+          x: Math.max(minX, Math.min(pos.x, maxX)),
+          y: Math.max(minY, Math.min(pos.y, maxY))
+        };
+      }
     });
 
-    // Create border
-    const border = new Konva.Rect({
-      x: x,
-      y: y,
-      width: width,
-      height: height,
-      stroke: options.BorderColor,
-      strokeWidth: options.BorderWidth,
-      cornerRadius: 0  // Removed corner roundingays IMU/accelerometer data as a time-series graph
- * 
- * Expected data structure extracted from metadata:
- * - sensorMetaData array with accelerometer readings
- */
+    // Create background and grid
+    const backgroundGroup = this.graphBackground.create(
+      0, 0, graphWidth, graphHeight, this.options
+    );
+    this.graphGroup.add(backgroundGroup);
+
+    // Create data curves
+    const curvesGroup = this.dataCurves.create(
+      this.data.timeValues,
+      this.data.lateralValues,
+      this.data.drivingValues,
+      0, 0, graphWidth, graphHeight,
+      this.options
+    );
+    this.graphGroup.add(curvesGroup);
+
+    // Create labels
+    const labelsGroup = this.graphLabels.create(
+      0, 0, graphWidth, graphHeight, this.options
+    );
+    this.graphGroup.add(labelsGroup);
+
+    // Add marker group
+    this.graphGroup.add(this.markerManager.group);
+
+    this.inertialBarGroup.add(this.graphGroup);
+    this.staticLayer.add(this.inertialBarGroup);
+
+    // Timeline indicator
+    const videoProgress = TimelineIndicator.calculateVideoProgress(epochTime, this.minTime, this.maxTime);
+    const timelineLine = this.timelineIndicator.create(
+      videoProgress, this.graphGroup.x(), this.graphGroup.y(), graphWidth, graphHeight, this.options
+    );
+    if (timelineLine) {
+      this.dynamicLayer.add(timelineLine);
+    }
+  }
+
+  updateTimeline(epochTime, graphWidth, graphHeight) {
+    this.minTime = Math.min(...this.data.epochTimes);
+    this.maxTime = Math.max(...this.data.epochTimes);
+    const videoProgress = TimelineIndicator.calculateVideoProgress(epochTime, this.minTime, this.maxTime);
+    const currentX = this.graphGroup.x();
+    const currentY = this.graphGroup.y();
+    this.timelineIndicator.update(videoProgress, currentX, currentY, graphWidth, graphHeight);
+    this.dynamicLayer.draw();
+  }
+
+  addMarker(markerID, emoji, description, normalizedTime) {
+    const graphWidth = this.graphGroup.width();
+    const graphHeight = this.graphGroup.height();
+    this.markerManager.create(
+      markerID,
+      emoji,
+      description,
+      normalizedTime,
+      0,
+      0,
+      graphWidth,
+      graphHeight,
+      this.options
+    );
+    this.staticLayer.batchDraw();
+  }
+
+  removeMarker(markerID) {
+    this.markerManager.removeMarker(markerID);
+    this.staticLayer.batchDraw();
+  }
+
+  updateMarkers() {
+    const graphWidth = this.graphGroup.width();
+    const graphHeight = this.graphGroup.height();
+    this.markerManager.markers.forEach((marker, markerID) => {
+      const time = marker.time;
+      this.markerManager.update(
+        markerID,
+        time,
+        0,
+        0,
+        graphWidth,
+        graphHeight
+      );
+    });
+  }
+}
+
 import { BaseVisualizer } from './base-visualizer.js';
 
 // Modular component for the graph background and grid
@@ -470,20 +582,10 @@ class MarkerManager {
   }
 }
 
+
 class InertialBar extends BaseVisualizer {
   constructor(staticLayer, dynamicLayer, metadata = {}) {
     super(staticLayer, dynamicLayer, metadata);
-    this.inertialBarGroup = null;
-    this.graphGroup = null;  // New group to hold background, curves, and labels
-    this.graphBackground = new GraphBackground();
-    this.dataCurves = new DataCurves();
-    this.timelineIndicator = new TimelineIndicator();
-    this.graphLabels = new GraphLabels();
-    this.markerManager = new MarkerManager(); // Add marker manager
-
-    this.minTime = null;
-    this.maxTime = null;
-
     // Graph options - Professional color scheme
     this.options = {
       Opacity: 0.95,
@@ -503,6 +605,7 @@ class InertialBar extends BaseVisualizer {
       TextStrokeColor: "#2c3e50", // Dark blue-gray stroke
       TextStrokeWidth: 1.5,
     };
+    this.grapher = null;
   }
 
   processMetadata(metadata = {}) {
@@ -650,106 +753,46 @@ class InertialBar extends BaseVisualizer {
 
   display(epochTime, H, W) {
     if (!this.data) return;
-
-  // Graph dimensions and positioning - make it wider and span more of the screen
-  const graphWidth = W * 0.9;   // 90% of video width
-  const graphHeight = H * 0.15; // 15% of video height
-  const graphX = W * 0.05;      // 5% margin from left (centered)
-  const graphY = H - graphHeight - (H * 0.02);  // 2% margin from bottom
-
-    // Create inertial bar group only once
-    if (!this.inertialBarGroup) {
-      this.inertialBarGroup = new Konva.Group();
-      
-      // Create a unified graph group
-      this.graphGroup = new Konva.Group({
-        x: graphX,
-        y: graphY,
-        width: graphWidth,
-        height: graphHeight,
-        draggable: true,  // Make the graph draggable
-        dragBoundFunc: function(pos) {
-          // Get stage dimensions
-          const stage = this.getStage();
-          const stageWidth = stage.width();
-          const stageHeight = stage.height();
-          
-          // Calculate bounds
-          const minX = stageWidth * 0.05;  // 5% from left
-          const maxX = stageWidth * 0.95 - graphWidth;  // 5% from right
-          const minY = 0;  // Allow dragging to top
-          const maxY = stageHeight - graphHeight - (stageHeight * 0.02);  // Keep 2% margin from bottom
-          
-          // Clamp position within bounds
-          return {
-            x: Math.max(minX, Math.min(pos.x, maxX)),
-            y: Math.max(minY, Math.min(pos.y, maxY))
-          };
-        }
-      });
-
-      // Create background and grid
-      const backgroundGroup = this.graphBackground.create(
-        0, 0, graphWidth, graphHeight, this.options  // Relative to graphGroup
+    const graphWidth = W * 0.9;
+    const graphHeight = H * 0.15;
+    const graphX = W * 0.05;
+    const graphY = H - graphHeight - (H * 0.02);
+    if (!this.grapher) {
+      this.grapher = new Grapher(
+        this.staticLayer,
+        this.dynamicLayer,
+        this.options,
+        this.data,
+        this.minTime,
+        this.maxTime
       );
-      this.graphGroup.add(backgroundGroup);
-
-      // Create data curves
-      const curvesGroup = this.dataCurves.create(
-        this.data.timeValues,
-        this.data.lateralValues,
-        this.data.drivingValues,
-        0, 0, graphWidth, graphHeight,  // Relative to graphGroup
-        this.options
-      );
-      this.graphGroup.add(curvesGroup);
-
-      // Create labels
-      const labelsGroup = this.graphLabels.create(
-        0, 0, graphWidth, graphHeight, this.options  // Relative to graphGroup
-      );
-      this.graphGroup.add(labelsGroup);
-
-      // Add the unified graph group to the main group
-      this.inertialBarGroup.add(this.graphGroup);
-
-      // Add marker group to the graph group
-      const markerGroup = this.markerManager.group;
-      this.graphGroup.add(markerGroup);
-
-      this.staticLayer.add(this.inertialBarGroup);
-
-      // Create timeline indicator in dynamic layer
-      // pick min, max from this.data.epochTimes
-      console.log(this.data);
-      console.log("epochTimes:", this.data.epochTimes);
-    const videoProgress = TimelineIndicator.calculateVideoProgress(epochTime, this.minTime, this.maxTime);
-      console.log("Creating timeline indicator at progress:", videoProgress, this.minTime, this.maxTime,epochTime);
-      const timelineLine = this.timelineIndicator.create(
-        videoProgress, this.graphGroup.x(), this.graphGroup.y(), graphWidth, graphHeight, this.options
-      );
-      if (timelineLine) {
-        this.dynamicLayer.add(timelineLine);
-      }
-
-      // Add a demo marker at 50% of the timeline
-      this.addMarker('marker1', '📱', 'Driver distraction alert - incab', 0.5);
-      this.addMarker('marker2', '🚗', 'Vehicle speed alert - incab \n 80 mph', 0.75);
+      this.grapher.createElements(graphX, graphY, graphWidth, graphHeight, epochTime);
+      // Add demo markers
+      this.grapher.addMarker('marker1', '📱', 'Driver distraction alert - incab', 0.5);
+      this.grapher.addMarker('marker2', '🚗', 'Vehicle speed alert - incab \n 80 mph', 0.75);
     } else {
-      // Update timeline indicator (this changes frequently)
-
-      // videoprogress
-    this.minTime = Math.min(...this.data.epochTimes);
-    this.maxTime = Math.max(...this.data.epochTimes);
-    const videoProgress = TimelineIndicator.calculateVideoProgress(epochTime, this.minTime, this.maxTime);
-      // Use the current position of the graph group for the timeline
-      const currentX = this.graphGroup.x();
-      const currentY = this.graphGroup.y();
-      console.log("Updating timeline indicator:", videoProgress, currentX, currentY);
-      this.timelineIndicator.update(videoProgress, currentX, currentY, graphWidth, graphHeight);
-      this.dynamicLayer.draw();
+      this.grapher.updateTimeline(epochTime, graphWidth, graphHeight);
     }
   }
-}
+
+  addMarker(markerID, emoji, description, normalizedTime) {
+    if (this.grapher) {
+      this.grapher.addMarker(markerID, emoji, description, normalizedTime);
+    }
+  }
+
+  removeMarker(markerID) {
+    if (this.grapher) {
+      this.grapher.removeMarker(markerID);
+    }
+  }
+
+  updateMarkers() {
+    if (this.grapher) {
+      this.grapher.updateMarkers();
+    }
+  }
+  }
+
 
 export { InertialBar };
