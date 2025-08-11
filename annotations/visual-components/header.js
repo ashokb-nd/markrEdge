@@ -437,9 +437,7 @@ class Header extends BaseVisualizer {
     };
   }
 
-  display(epochTime, videoRect) {
-    const L = videoRect.height;
-    const W = videoRect.width;
+  display(epochTime, H, W) {
     const padding = 10;
 
     // Create header group only once

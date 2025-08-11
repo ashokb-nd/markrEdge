@@ -631,17 +631,14 @@ class InertialBar extends BaseVisualizer {
     });
   }
 
-  display(epochTime, videoRect) {
+  display(epochTime, H, W) {
     if (!this.data) return;
 
-    const L = videoRect.height;
-    const W = videoRect.width;
-
-    // Graph dimensions and positioning - make it wider and span more of the screen
-    const graphWidth = W * 0.9;   // 90% of video width
-    const graphHeight = L * 0.15; // 15% of video height
-    const graphX = W * 0.05;      // 5% margin from left (centered)
-    const graphY = L - graphHeight - (L * 0.02);  // 2% margin from bottom
+  // Graph dimensions and positioning - make it wider and span more of the screen
+  const graphWidth = W * 0.9;   // 90% of video width
+  const graphHeight = H * 0.15; // 15% of video height
+  const graphX = W * 0.05;      // 5% margin from left (centered)
+  const graphY = H - graphHeight - (H * 0.02);  // 2% margin from bottom
 
     // Create inertial bar group only once
     if (!this.inertialBarGroup) {
@@ -715,7 +712,7 @@ class InertialBar extends BaseVisualizer {
       }
 
       // Add a demo marker at 50% of the timeline
-      this.addMarker('marker1', '🎉', 'Driver distraction alert - incab', 0.5);
+      this.addMarker('marker1', '📱', 'Driver distraction alert - incab', 0.5);
       this.addMarker('marker2', '🚗', 'Vehicle speed alert - incab \n 80 mph', 0.75);
     } else {
       // Update timeline indicator (this changes frequently)

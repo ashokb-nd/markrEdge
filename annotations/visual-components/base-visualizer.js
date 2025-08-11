@@ -13,7 +13,7 @@ class BaseVisualizer {
     // process metadata, Extract relevant information
     throw new Error("processMetadata method must be implemented by subclass");
   }
-  display(epochTime, videoRect) {
+  display(epochTime, H, W) {
     throw new Error("display method must be implemented by subclass");
   }
 

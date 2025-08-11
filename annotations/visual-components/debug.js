@@ -14,11 +14,9 @@ class Debug extends BaseVisualizer {
     return null;
   }
 
-  display(epochTime, videoRect) {
+  display(epochTime, H, W) {
     // Create debug cross only once and cache it
     if (!this.debugCross) {
-      const L = videoRect.height;
-      const W = videoRect.width;
 
       // Common properties for all debug elements
       const debugStyle = {
@@ -40,15 +38,15 @@ class Debug extends BaseVisualizer {
       });
       
       const lines = [
-        createLine([0, 0, W, L]),        // Diagonal 1
-        createLine([W, 0, 0, L]),        // Diagonal 2
-        createLine([W/2, 0, W/2, L]),    // Vertical
-        createLine([0, L/2, W, L/2]),    // Horizontal
+        createLine([0, 0, W, H]),        // Diagonal 1
+        createLine([W, 0, 0, H]),        // Diagonal 2
+        createLine([W/2, 0, W/2, H]),    // Vertical
+        createLine([0, H/2, W, H/2]),    // Horizontal
         // Border lines
         createLine([0, 0, W, 0]),        // Top
-        createLine([W, 0, W, L]),        // Right
-        createLine([W, L, 0, L]),        // Bottom
-        createLine([0, L, 0, 0])         // Left
+        createLine([W, 0, W, H]),        // Right
+        createLine([W, H, 0, H]),        // Bottom
+        createLine([0, H, 0, 0])         // Left
       ];
       
       // Add all lines to group

@@ -22,7 +22,7 @@ const AVAILABLE_VISUALIZERS = [
   // Add more visualizers to this array
 ];
 
-// Create map automatically: class name -> class reference
+// Create map of : visualizer class name -> class reference
 const VISUALIZER_MAP = Object.fromEntries(AVAILABLE_VISUALIZERS.map(cls => [cls.name, cls]));
 
 class VideoAnnotator {
@@ -36,6 +36,7 @@ class VideoAnnotator {
     // starting epoch time for video to align the annotations with the video playback
     if (metadata.startTime) {
       this._videoStartEpochTimeMS = metadata.startTime;
+      console.log("Video start epoch time set to:", this._videoStartEpochTimeMS);
     } else {
       this._videoStartEpochTimeMS = Date.now(); // Fallback to current time if not provided
       console.warn("No startTime provided in metadata, using current time as fallback.");
@@ -67,6 +68,7 @@ class VideoAnnotator {
     this.stage.add(this.dynamicLayer);
   }
 
+  // intialize visualizers from list of names
   _initializeVisualizers(visualizerNames) {
     
     for (const category of visualizerNames) {
@@ -122,30 +124,18 @@ class VideoAnnotator {
 
   //this is called for every time the video time changes
   _render() {
-    const epochTime = this.getCurrentEpochTimeInVideo();
-    const videoRect = this._getVideoRect();
+    const epochTime = this._videoStartEpochTimeMS + (this.video.currentTime * 1000);
 
     if (this._lastRenderTime === epochTime){console.log("skipping render as last render time is same as current epoch time"); return;}
     this._lastRenderTime = epochTime;
 
-    this.visualizers.forEach(visualizer => {visualizer.display(epochTime, videoRect);});
+    // current size of the video in pixels
+    const H = this.video.offsetHeight;
+    const W = this.video.offsetWidth;
+
+    this.visualizers.forEach(visualizer => {visualizer.display(epochTime, H, W);});
   }
 
-  _getVideoRect() {
-    // size of video at present time in Browser in pixels
-    return {
-      width: this.video.offsetWidth,
-      height: this.video.offsetHeight
-    };
-  }
-
-  getCurrentEpochTimeInVideo() {
-    if (this._videoStartEpochTimeMS) {
-      return this._videoStartEpochTimeMS + (this.video.currentTime * 1000);
-    }else{
-      throw new Error("video start epochtime is not set");
-    }
-  }
 
 }
 
