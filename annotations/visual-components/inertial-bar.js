@@ -770,6 +770,7 @@ class InertialBar extends BaseVisualizer {
       // Add demo markers
       this.grapher.addMarker('marker1', '📱', 'Driver distraction alert - incab', 0.5);
       this.grapher.addMarker('marker2', '🚗', 'Vehicle speed alert - incab \n 80 mph', 0.75);
+      this.grapher.addMarker('marker3', '😴', 'Drowsy - incab', 0.25);
     } else {
       this.grapher.updateTimeline(epochTime, graphWidth, graphHeight);
     }
