@@ -5,11 +5,31 @@ import { BaseVisualizer } from './base-visualizer.js';
 export class Dsf extends BaseVisualizer {
   constructor(staticLayer, dynamicLayer, metadata) {
     super(staticLayer, dynamicLayer, metadata);
-    // Additional initialization if needed
-    this.vanishingTriangle = null;
+
+    // lane calibration
+    // this.vanishingTriangle = null;
+    // this.positionsInLaneData = null;
+    // this.VP_normalized = null; // Vanishing Point
+    // this.lane_cal_left = null; // Left lane calibration
+    // this.lane_cal_right = null; // Right lane calibration
+
+    this.laneLine = new Konva.Line({
+    points: [0, 0, 0, 0],
+    stroke: '#ee2913ff',
+    strokeWidth: 2,
+    lineCap: 'round',
+    // opacity: 0.8
+  });
   }
 
   processMetadata(metadata) {
+    // add positionsInLane data
+    this.positionsInLaneData = metadata?.inference_data?.observations_data?.positionsInLane || null;
+    //  it is list of [epochTime,position] eg.  [1751942810796, -0.07]
+    // console.log("Positions in lane data:", this.positionsInLaneData);
+
+
+
    const MIN_TRACK_LENGTH = 3;
     const CANONICAL_OUTWARD_IMAGE_WIDTH = 1920;
     const CANONICAL_OUTWARD_IMAGE_HEIGHT = 1080;
@@ -65,15 +85,17 @@ export class Dsf extends BaseVisualizer {
 
     // case 2: till vanishing point
     // -------
-       const vanishingTriangleData = [
-      // Left calibration segment: bottom-left to 5% up
-      [[xInt[0] / CANONICAL_OUTWARD_IMAGE_WIDTH, 1.0],
-       [vanishingPointEstimate[0] / CANONICAL_OUTWARD_IMAGE_WIDTH, vanishingPointEstimate[1] / imageHeight]],
-      // Right calibration segment: bottom-right to 5% up
-      [[xInt[1] / CANONICAL_OUTWARD_IMAGE_WIDTH, 1.0],
-       [vanishingPointEstimate[0] / CANONICAL_OUTWARD_IMAGE_WIDTH, vanishingPointEstimate[1] / imageHeight]]
+    const VP = [vanishingPointEstimate[0] / CANONICAL_OUTWARD_IMAGE_WIDTH, vanishingPointEstimate[1] / imageHeight];
+    this.VP_normalized = VP;
+    this.lane_cal_left = xInt[0] / CANONICAL_OUTWARD_IMAGE_WIDTH;
+    this.lane_cal_right = xInt[1] / CANONICAL_OUTWARD_IMAGE_WIDTH;
+
+    const vanishingTriangleData = [
+      [[this.lane_cal_left, 1.0], [...VP]],
+      [[this.lane_cal_right, 1.0], [...VP]]
     ];
 
+    console.log("Vanishing Triangle Data:", vanishingTriangleData);
     return vanishingTriangleData;
   }
 
@@ -104,5 +126,32 @@ export class Dsf extends BaseVisualizer {
     this.staticLayer.add(this.vanishingTriangle);
   }
   // if already there. do nothing
+  //add positions marking on road
+  //pick the closet positioninlane value to this epoch from this.positionInLane
+  console.log('positionsInLaneData',this.positionsInLaneData);
+  const [closetEpoch, closest_PIL] = this.positionsInLaneData.reduce((prev, curr) => {
+    return (Math.abs(curr[0] - epochTime) < Math.abs(prev[0] - epochTime) ? curr : prev);
+  });
+
+  // lanewidth * closest_PIL + lane centre
+  // formula : PIL = (vp_x - lane_center) / lane_width
+  // lane_center = PIL * lane_width + vp_x
+
+  const laneWidth_norm = (this.lane_cal_left - this.lane_cal_right);
+  const laneCenter = (closest_PIL * laneWidth_norm + this.VP_normalized[0]) * W;
+  const lane_left = laneCenter - laneWidth_norm*W / 2;
+  const lane_right = laneCenter + laneWidth_norm*W / 2;
+
+//   draw a line from lane_left to lane_right
+//   this.laneLine = new Konva.Line({
+//     points: [lane_left, H, lane_right, H],
+//     stroke: '#04fd63ff',
+//     strokeWidth: 5,
+//     lineCap: 'round',
+//     // opacity: 0.8
+//   });
+
+    this.laneLine.points([lane_left, H-10, lane_right, H-10]);
+  this.dynamicLayer.add(this.laneLine);
 }
 }
