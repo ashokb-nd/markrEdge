@@ -342,7 +342,7 @@ class GraphLabels {
       fontStyle: 'bold'
     };
 
-    const topY = y;
+    const topY = y - 10;
     const bottomY = y + height;
     const rightX = x + width;
 

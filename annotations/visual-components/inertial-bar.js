@@ -66,18 +66,29 @@ class InertialBar extends BaseVisualizer {
         }
     });
 
-    if (acc1.length === 0) {
-      // Return dummy data if no valid accelerometer data found
-      return this.generateDummyData(100);
-    }
+
+
 
     // Convert epoch times to normalized values (0 to 1)
     this.minTime = Math.min(...epochTimes);
     this.maxTime = Math.max(...epochTimes);
-    const timeRange = this.maxTime - this.minTime;
+    // const timeRange = this.maxTime - this.minTime;
+    // const timeValues = epochTimes.map(time => (time - this.minTime) / timeRange);
 
-    const timeValues = epochTimes.map(time => (time - this.minTime) / timeRange);
+    //get positions in lane
+    const PIL_data = metadata.inference_data.observations_data.positionsInLane // list of list , [epochtime,value] . eg.  [[1754533660893,0],...]
+    // console.log("minTime", this.minTime);
+    // console.log("maxTime", this.maxTime);
+    // // console.log("PIL_data", PIL_data);
+    // let pil_epochs = PIL_data.map(pos => pos[0]);
+    // console.log("PIL_min", Math.min(...pil_epochs));
+    // console.log("PIL_max", Math.max(...pil_epochs));
 
+    // // differences
+    // console.log('PIL max-min', Math.max(...pil_epochs) - Math.min(...pil_epochs));
+    // console.log('epochTimes max-min', this.maxTime - this.minTime);
+
+    // window.pil_data = PIL_data;
     // Create inertial bar data structure
     return {
       //Graphs
@@ -98,17 +109,18 @@ class InertialBar extends BaseVisualizer {
           y_scale: 9.8 * 0.75,
           color:"#e74c3c"
         },
-        epochTimes_dummy:{
-          epochTimes: epochTimes,
-          values: acc1, // Dummy acceleration
-          label: "Dummy Acceleration",
+
+        positionsInLane: {
+          epochTimes: PIL_data.map(pos => pos[0]),
+          values: PIL_data.map(pos => pos[1]),
+          label: "Positions in Lane",
           y_offset: 0,
-          y_scale: 9.8 * 2,
+          y_scale: 0.5,
           color:"#3498db"
         }
       },
       epochTimes: epochTimes,
-      timeValues: timeValues,
+      // timeValues: timeValues,
       // lateralValues: acc2,  // Use acc2 for lateral
       // drivingValues: acc3   // Use acc3 for driving
     };
