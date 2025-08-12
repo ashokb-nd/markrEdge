@@ -95,7 +95,7 @@ export class Dsf extends BaseVisualizer {
       [[this.lane_cal_right, 1.0], [...VP]]
     ];
 
-    console.log("Vanishing Triangle Data:", vanishingTriangleData);
+    // console.log("Vanishing Triangle Data:", vanishingTriangleData);
     return vanishingTriangleData;
   }
 
@@ -128,7 +128,7 @@ export class Dsf extends BaseVisualizer {
   // if already there. do nothing
   //add positions marking on road
   //pick the closet positioninlane value to this epoch from this.positionInLane
-  console.log('positionsInLaneData',this.positionsInLaneData);
+//   console.log('positionsInLaneData',this.positionsInLaneData);
   const [closetEpoch, closest_PIL] = this.positionsInLaneData.reduce((prev, curr) => {
     return (Math.abs(curr[0] - epochTime) < Math.abs(prev[0] - epochTime) ? curr : prev);
   });
