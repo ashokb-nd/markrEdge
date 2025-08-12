@@ -51,7 +51,7 @@ function setResizeListenersForKonvaResizing() {
 };
 
 function loadMetadata() {
-    return fetch('/assets/metadata.json')
+    return fetch('/assets/0/metadata.json')
         .then(response => response.json())
         .then(data => {
             // console.log("Metadata loaded:", data);
@@ -71,7 +71,7 @@ function initVideoAnnotators() {
         inwardVideo, 
         inwardStage, 
         metadata,
-        ['Debug', 'InertialBar']  // Added InertialBar to inward video
+        ['Header', 'InertialBar']  // Added InertialBar to inward video
     );
     
     outwardAnnotator = new VideoAnnotator(
