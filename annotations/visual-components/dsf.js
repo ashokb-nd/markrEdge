@@ -13,13 +13,30 @@ export class Dsf extends BaseVisualizer {
     // this.lane_cal_left = null; // Left lane calibration
     // this.lane_cal_right = null; // Right lane calibration
 
-    this.laneLine = new Konva.Line({
+// Lane segment stroke colors
+const laneStrokeColors = ['#ee2913ff', '#04fd63ff', '#832ce1d6', '#f7c948ff'];
+const laneSegmentStyle = { points: [0, 0, 0, 0], strokeWidth: 2, lineCap: 'round', opacity: 1 };
+
+// Create 4 lane segment lines, add to dynamicLayer
+[this.laneseg1, this.laneseg2, this.laneseg3, this.laneseg4] = laneStrokeColors.map(color =>
+    new Konva.Line({ stroke: color, ...laneSegmentStyle })
+);
+  this.dynamicLayer.add(this.laneseg1);
+  this.dynamicLayer.add(this.laneseg2);
+  this.dynamicLayer.add(this.laneseg3);
+  this.dynamicLayer.add(this.laneseg4);
+
+
+
+  this.vanishingDrop = new Konva.Line({
     points: [0, 0, 0, 0],
-    stroke: '#ee2913ff',
-    strokeWidth: 2,
+    stroke: '#70efebd6',
+    strokeWidth: 1,
     lineCap: 'round',
+    dash: [5, 5], // dashed line: 5px dash, 5px gap
     // opacity: 0.8
   });
+  this.dynamicLayer.add(this.vanishingDrop);
   }
 
   processMetadata(metadata) {
@@ -108,7 +125,7 @@ export class Dsf extends BaseVisualizer {
         stroke: '#04fd63ff',
         strokeWidth: 1,
         lineCap: 'round',
-        // opacity: 0.8
+        opacity: 0.2
       };
 
 
@@ -142,16 +159,21 @@ export class Dsf extends BaseVisualizer {
   const lane_left = laneCenter - laneWidth_norm*W / 2;
   const lane_right = laneCenter + laneWidth_norm*W / 2;
 
-//   draw a line from lane_left to lane_right
-//   this.laneLine = new Konva.Line({
-//     points: [lane_left, H, lane_right, H],
-//     stroke: '#04fd63ff',
-//     strokeWidth: 5,
-//     lineCap: 'round',
-//     // opacity: 0.8
-//   });
-
-    this.laneLine.points([lane_left, H-10, lane_right, H-10]);
-  this.dynamicLayer.add(this.laneLine);
+    // Update lane segment lines in place
+    const segmentLength = (lane_right - lane_left) / 4;
+    const segPoints = [
+      [lane_left, H-10, lane_left + segmentLength, H-10],
+      [lane_left + segmentLength, H-10, lane_left + 2*segmentLength, H-10],
+      [lane_left + 2*segmentLength, H-10, lane_left + 3*segmentLength, H-10],
+      [lane_left + 3*segmentLength, H-10, lane_right, H-10]
+    ];
+    this.laneseg1.points(segPoints[0]);
+    this.laneseg2.points(segPoints[1]);
+    this.laneseg3.points(segPoints[2]);
+    this.laneseg4.points(segPoints[3]);
+    this.vanishingDrop.points([this.VP_normalized[0]*W, this.VP_normalized[1]*H,
+                            this.VP_normalized[0]*W, H-10]);
+//   this.dynamicLayer.add(this.laneLine);
+//   this.dynamicLayer.add(this.vanishingDrop);
 }
 }
