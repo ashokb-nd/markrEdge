@@ -80,45 +80,39 @@ class InertialBar extends BaseVisualizer {
 
     // Create inertial bar data structure
     return {
-      // Raw accelerometer data arrays
-      acc1: acc1,
-      acc2: acc2, // Lateral acceleration
-      acc3: acc3, // Driving acceleration
+      //Graphs
+      graphs:{
+        lateral:{
+          epochTimes: epochTimes,
+          values: acc2, // Lateral acceleration
+          label: "Lateral Acceleration",
+          y_offset: 0,
+          y_scale: 9.8 * 0.75,
+          color:"#2ecc71"
+        },
+        driving:{
+          epochTimes: epochTimes,
+          values: acc3, // Driving acceleration
+          label: "Driving Acceleration",
+          y_offset: 0,
+          y_scale: 9.8 * 0.75,
+          color:"#e74c3c"
+        },
+        epochTimes_dummy:{
+          epochTimes: epochTimes,
+          values: acc1, // Dummy acceleration
+          label: "Dummy Acceleration",
+          y_offset: 0,
+          y_scale: 9.8 * 2,
+          color:"#3498db"
+        }
+      },
       epochTimes: epochTimes,
       timeValues: timeValues,
-      lateralValues: acc2,  // Use acc2 for lateral
-      drivingValues: acc3   // Use acc3 for driving
+      // lateralValues: acc2,  // Use acc2 for lateral
+      // drivingValues: acc3   // Use acc3 for driving
     };
   }
-
-  // generateDummyData(numPoints) {
-  //   const timeValues = [];
-  //   const lateralValues = [];
-  //   const drivingValues = [];
-  //   const epochtime = [];
-    
-  //   const currentTime = Date.now();
-    
-  //   for (let i = 0; i < numPoints; i++) {
-  //     const t = i / (numPoints - 1);
-  //     timeValues.push(t);
-  //     epochtime.push(currentTime + i * 100); // 100ms intervals
-      
-  //     // Generate smooth curves with some randomness
-  //     lateralValues.push(0.3 * Math.sin(t * 4 * Math.PI) + 0.1 * (Math.random() - 0.5));
-  //     drivingValues.push(0.2 * Math.cos(t * 6 * Math.PI) + 0.1 * (Math.random() - 0.5));
-  //   }
-    
-  //   return { 
-  //     timeValues, 
-  //     lateralValues, 
-  //     drivingValues, 
-  //     epochtime,
-  //     acc1: drivingValues.map(v => v + 9.8), // Add gravity component
-  //     acc2: lateralValues,
-  //     acc3: drivingValues
-  //   };
-  // }
 
   // Add a marker at the specified normalized time (0-1)
   addMarker(markerID, emoji, description, normalizedTime) {
