@@ -397,43 +397,18 @@ class Header extends BaseVisualizer {
   }
 
   processMetadata(metadata = {}) {
-    // Extract session and device information from metadata with fallbacks to dummy data
-    const sessionInfo = metadata?.session_info || {};
-    const deviceInfo = metadata?.device_info || {};
-    const inferenceData = metadata?.inference_data || {};
+    this.gps_data = metadata.videoMetaData
     
     // Extract header banner data with comprehensive fallbacks
     return {
-      // Session details - fallback to dummy data
-      sessionId: sessionInfo.session_id || 'TEST-SESSION-001',
-      timestamp: sessionInfo.start_time || new Date().toISOString(),
-      duration: sessionInfo.duration_ms || 120000, // 2 minutes default
-      
-      // Device information - fallback to dummy data
-      deviceModel: deviceInfo.model || 'DashCam Pro X1',
-      firmwareVersion: deviceInfo.firmware_version || 'v2.1.3',
-      
-      // Alert/inference information - fallback to dummy data
-      alertId: metadata?.alertId || 'ALERT-SPD-001',
-      alertType: metadata?.alert_type || 'speeding',
-      confidenceLevel: inferenceData?.confidence || 0.85,
-      
       // Speed and location data - dummy data for testing
       currentSpeed: metadata?.currentSpeed || 42,
       speedLimit: metadata?.speedLimit || 35,
-      location: metadata?.location || 'Highway 101',
-      
       // Alert messages - dummy data for testing
       alertMessages: metadata?.alertMessages || ["🚨 SPEED LIMIT EXCEEDED", "👀 DRIVER ATTENTION"],
       
       // Time zone - fallback to dummy data
       timeZone: metadata?.timeZone || 'America/Los_Angeles',
-      
-      // Additional dummy data for richer testing
-      driverName: metadata?.driverName || 'John Doe',
-      vehicleId: metadata?.vehicleId || 'VH-12345',
-      tripId: metadata?.tripId || 'TRIP-2024-001',
-      gpsCoords: metadata?.gpsCoords || { lat: 37.7749, lng: -122.4194 }
     };
   }
 
@@ -480,6 +455,16 @@ class Header extends BaseVisualizer {
         speedLimit: 35,
         timeZone: 'America/Los_Angeles'
       };
+      // use gps_data to get the current by the closest timestamp i.e. epochtime s
+      const closestGPSData = this.gps_data.reduce((prev, curr) => {
+        return (Math.abs(curr.timestamp - epochTime) < Math.abs(prev.timestamp - epochTime) ? curr : prev);
+      });
+      this.data = {
+        currentSpeed: Math.round(closestGPSData.speed),
+        speedLimit: 10, // dummy 
+        timeZone: closestGPSData.timeZone || 'America/Los_Angeles' // dummy fallback
+      };
+
       this.speedBadge.update(this.data);
       this.timestamp.update(epochTime, this.data.timeZone);
       this.staticLayer.batchDraw();
