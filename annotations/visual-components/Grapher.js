@@ -141,130 +141,74 @@ class GraphBackground {
     this.height = 0;
   }
 
-  create(x, y, width, height) {
+  create(x, y, width, height,options={}) {
     //set position and size
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
 
-    // options used 
-    // Only keep options actually used by GraphBackground
     const defaultOptions = {
       BackgroundColor: "#1a1a1a",
       BackgroundOpacity: 0.5,
-      BorderColor: "rgba(74, 144, 226, 0.5)",
-      BorderWidth: 1,
-      GridColor: "#ffffff",
-      GridOpacity: 0.07,
-      CornerRadius: 8
+      BorderColor: "rgba(176, 189, 203, 1)",
+      BorderWidth: 1
     };
-    // Merge defaults with provided options
-    // this.options = { ...defaultOptions, ...options };
-    this.options = { ...defaultOptions};
+    this.options = { ...defaultOptions, ...options };
 
     // Create background rectangle with rounded corners
     const background = new Konva.Rect({
-      x: x,
-      y: y,
-      width: width,
-      height: height,
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: this.height,
       fill: this.options.BackgroundColor,
       opacity: this.options.BackgroundOpacity,
-      cornerRadius: this.options.CornerRadius,
-      // shadowColor: 'rgba(0, 0, 0, 0.3)',
-      // shadowBlur: 8,
-      // shadowOffset: { x: 0, y: 4 }
-    });
-
-    // Create border
-    const border = new Konva.Rect({
-      x: x,
-      y: y,
-      width: width,
-      height: height,
       stroke: this.options.BorderColor,
       strokeWidth: this.options.BorderWidth,
-      // cornerRadius: this.options.CornerRadius
     });
 
+
     this.group.add(background);
-    this.group.add(border);
 
-    // Add grid lines
-    this._addGridLines(x, y, width, height, this.options);
-
+    //major grid lines
+    this._addGridLines(10,4,{opacity: 0.3, stroke: "#3273e4ff"});
+    //minor grid lines
+    this._addGridLines(20, 8,{opacity: 0.1, stroke: "#5884cfff"});
     return this.group;
   }
 
-  _addGridLines(x, y, width, height, options) {
-    // Major grid lines (fewer, more prominent)
-    this._addMajorGridLines(x, y, width, height, options);
-    // Minor grid lines (more numerous, very subtle)
-    this._addMinorGridLines(x, y, width, height, options);
-  }
-
-  _addMajorGridLines(x, y, width, height, options) {
-    // Horizontal major grid lines
-    for (let i = 1; i < 4; i++) {
-      const gridY = y + (height * i / 4);
-      const hLine = new Konva.Line({
-        points: [x, gridY, x + width, gridY],
-        stroke: this.options.GridColor,
+  _addGridLines(x_ticks, y_ticks, style = {}) {
+    //x_ticks, y_ticks: number of segments horizontally, vertically.
+    let defaultStyle = {
+        stroke: "#ffffff",
         strokeWidth: 0.5,
-        opacity: this.options.GridOpacity * 1.5, // Slightly more visible
+        opacity: 0.5,
         perfectDrawEnabled: false,
+    };
+    style = { ...defaultStyle, ...style };
+
+    //horizontal lines device Horizontal space
+    for(let i=1; i<=y_ticks; i++) {
+      const gridY = this.y + (this.height * i / y_ticks);
+      const hLine = new Konva.Line({
+        points: [this.x, gridY, this.x + this.width, gridY],
+        ...style
       });
       this.group.add(hLine);
     }
 
-    // Vertical major grid lines
-    for (let i = 1; i < 8; i++) {
-      const gridX = x + (width * i / 8);
+    //vertical lines
+    for(let i=1; i<x_ticks; i++) {
+      const gridX = this.x + (this.width * i / x_ticks);
       const vLine = new Konva.Line({
-        points: [gridX, y, gridX, y + height],
-        stroke: this.options.GridColor,
-        strokeWidth: 0.5,
-        opacity: this.options.GridOpacity * 2,
-        perfectDrawEnabled: false,
+        points: [gridX, this.y, gridX, this.y + this.height],
+        ...style
       });
       this.group.add(vLine);
     }
   }
-
-  _addMinorGridLines(x, y, width, height, options) {
-    // Horizontal minor grid lines
-    for (let i = 1; i < 16; i++) {
-      if (i % 4 !== 0) { // Skip where major lines are
-        const gridY = y + (height * i / 16);
-        const hLine = new Konva.Line({
-          points: [x, gridY, x + width, gridY],
-          stroke: this.options.GridColor,
-          strokeWidth: 0.25,
-          opacity: this.options.GridOpacity * 0.5, // More subtle
-          perfectDrawEnabled: false,
-        });
-        this.group.add(hLine);
-      }
-    }
-
-    // Vertical minor grid lines
-    for (let i = 1; i < 32; i++) {
-      if (i % 4 !== 0) { // Skip where major lines are
-        const gridX = x + (width * i / 32);
-        const vLine = new Konva.Line({
-          points: [gridX, y, gridX, y + height],
-          stroke: this.options.GridColor,
-          strokeWidth: 0.25,
-          opacity: this.options.GridOpacity * 0.5,
-          perfectDrawEnabled: false,
-        });
-        this.group.add(vLine);
-      }
-    }
-  }
-  }
-
+}
 
 // Modular component for data curves
 class DataCurves {
