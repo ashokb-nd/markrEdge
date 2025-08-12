@@ -5,8 +5,8 @@ class Grapher {
     this.dynamicLayer = dynamicLayer;
     this.options = options;
     this.data = data;
-    this.minTime = minTime;
-    this.maxTime = maxTime;
+    this.minTime = null;
+    this.maxTime = null;
 
     this.graphBackground = new GraphBackground();
     this.dataCurves = new DataCurves();
@@ -50,11 +50,22 @@ class Grapher {
     this.graphGroup.add(backgroundGroup);
 
     // Create data curves
-    const curvesGroup = this.dataCurves.create(
+    // const curvesGroup = this.dataCurves.create(
+    //   this.data,
+    //   0, 0, graphWidth, graphHeight,
+    //   this.options
+    // );
+
+    const [curvesGroup, minTime, maxTime] = this.dataCurves.create(
       this.data,
       0, 0, graphWidth, graphHeight,
       this.options
     );
+
+    // const curvesGroup = dataCurvesReturn[0];
+    this.minTime = minTime;
+    this.maxTime = maxTime;
+
     this.graphGroup.add(curvesGroup);
 
     // Create labels
@@ -80,8 +91,8 @@ class Grapher {
   }
 
   updateTimeline(epochTime, graphWidth, graphHeight) {
-    this.minTime = Math.min(...this.data.epochTimes);
-    this.maxTime = Math.max(...this.data.epochTimes);
+    // this.minTime = Math.min(...this.data.epochTimes);
+    // this.maxTime = Math.max(...this.data.epochTimes);
     const videoProgress = TimelineIndicator.calculateVideoProgress(epochTime, this.minTime, this.maxTime);
     const currentX = this.graphGroup.x();
     const currentY = this.graphGroup.y();
@@ -250,7 +261,7 @@ class DataCurves {
       this.group.add(curve);
     //   console.log(`Created curve for ${key}`);
     });
-    return this.group;
+    return [this.group, MIN_EPOCH, MAX_EPOCH];
   }
 
   // Private method for graph points calculation
