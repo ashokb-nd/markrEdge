@@ -404,8 +404,8 @@ class GraphLabels {
       fontFamily: 'Arial',
       fontStyle: 'bold',
       fill: options.Curve1Color,
-      stroke: options.TextStrokeColor,
-      strokeWidth: 1,
+      // stroke: options.TextStrokeColor,
+      // strokeWidth: 1,
       align: 'right'
     });
 
@@ -418,8 +418,8 @@ class GraphLabels {
       fontFamily: 'Arial',
       fontStyle: 'bold',
       fill: options.TextColor,
-      stroke: options.TextStrokeColor,
-      strokeWidth: 1
+      // stroke: options.TextStrokeColor,
+      // strokeWidth: 1
     });
 
     // Create "BKWD" text in red (driving color)
@@ -431,8 +431,8 @@ class GraphLabels {
       fontFamily: 'Arial',
       fontStyle: 'bold',
       fill: options.Curve2Color,
-      stroke: options.TextStrokeColor,
-      strokeWidth: 1
+      // stroke: options.TextStrokeColor,
+      // strokeWidth: 1
     });
 
     // Bottom-right corner: "FWD|RIGHT" with proper colors
@@ -447,8 +447,8 @@ class GraphLabels {
       fontFamily: 'Arial',
       fontStyle: 'bold',
       fill: options.Curve1Color,
-      stroke: options.TextStrokeColor,
-      strokeWidth: 1
+      // stroke: options.TextStrokeColor,
+      // strokeWidth: 1
     });
 
     // Create "|" separator
@@ -460,8 +460,8 @@ class GraphLabels {
       fontFamily: 'Arial',
       fontStyle: 'bold',
       fill: options.TextColor,
-      stroke: options.TextStrokeColor,
-      strokeWidth: 1
+      // stroke: options.TextStrokeColor,
+      // strokeWidth: 1
     });
 
     // Create "FWD" text in red (driving color)
@@ -473,8 +473,8 @@ class GraphLabels {
       fontFamily: 'Arial',
       fontStyle: 'bold',
       fill: options.Curve2Color,
-      stroke: options.TextStrokeColor,
-      strokeWidth: 1
+      // stroke: options.TextStrokeColor,
+      // strokeWidth: 1
     });
 
     this.group.add(bkwdText);
