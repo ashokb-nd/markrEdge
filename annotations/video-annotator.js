@@ -9,6 +9,7 @@
 
 // Import visualizers
 import { Debug } from "./visual-components/debug.js";
+import {Dsf} from "./visual-components/dsf.js";
 import { Header } from "./visual-components/header.js";
 import { InertialBar } from "./visual-components/inertial-bar.js";
 // Add more visualizers here as needed
@@ -19,6 +20,7 @@ const AVAILABLE_VISUALIZERS = [
   Debug,
   Header,
   InertialBar,
+  Dsf,
   // Add more visualizers to this array
 ];
 

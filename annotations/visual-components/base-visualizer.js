@@ -21,10 +21,13 @@ class BaseVisualizer {
 
 export { BaseVisualizer };
 
-// ====== Template for new visualizers ======
+//=============================
+// Template for new visualizers
+//=============================
+
 // import { BaseVisualizer } from './base-visualizer.js';
 
-// class NewVisualizer extends BaseVisualizer {
+// export class NewVisualizer extends BaseVisualizer {
 //   constructor(staticLayer, dynamicLayer, metadata) {
 //     super(staticLayer, dynamicLayer, metadata);
 //     // Additional initialization if needed
@@ -35,7 +38,7 @@ export { BaseVisualizer };
 //     return extractedData;
 //   }
 
-//   display(epochTime, videoRect) {
+//   display(epochTime, H, W) {
 //     // Implement visualization logic here
 //   }
 // }
