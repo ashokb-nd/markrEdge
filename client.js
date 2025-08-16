@@ -78,7 +78,7 @@ function initVideoAnnotators() {
         outwardVideo, 
         outwardStage, 
         metadata,
-        ['Header', 'InertialBar', 'Dsf']  
+        ['Header', 'InertialBar', 'Dsf',"Multilane"]  
     );
     });
 }
