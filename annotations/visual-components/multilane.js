@@ -5,7 +5,8 @@ export class Multilane extends BaseVisualizer {
   constructor(staticLayer, dynamicLayer, metadata) {
     super(staticLayer, dynamicLayer, metadata);
     // Additional initialization if needed
-    this.lane_frame_markings = []
+    this.lane_frame_markings = [];
+    this.debug_points = [];
   }
 
   processMetadata(metadata) {
@@ -21,7 +22,7 @@ export class Multilane extends BaseVisualizer {
     return extractedData;
   }
 
-  _format_bazier_points(points,H,W,debug=false) {
+  _format_bazier_points(points,H,W,debug=true) {
     // points are expected as a list of 8 numbers
     // console.log("unnormalized", points);
     // BezPoints (list) - 6 element list representing
@@ -52,12 +53,13 @@ export class Multilane extends BaseVisualizer {
         const circle = new Konva.Circle({
             x: x,
             y: y,
-            radius: 5,
+            radius: 2,
             fill: colors[i],
-            stroke: 'black',
-            strokeWidth: 1
+            // stroke: 'black',
+            // strokeWidth: 1
         });
         this.dynamicLayer.add(circle);
+        this.debug_points.push(circle);
     }
 }
     return scaled_points;
@@ -75,7 +77,7 @@ export class Multilane extends BaseVisualizer {
         continue
     }
 
-    // check if recent
+    // check if recent enough
     const time_diff = epochTime - track_epoch;
     if(time_diff > 200){
         continue;
@@ -106,6 +108,10 @@ export class Multilane extends BaseVisualizer {
     //clear all tracks
     for(let lane_frame of this.lane_frame_markings){
         lane_frame.destroy();
+    }
+    //clear all dots
+    for(let dot of this.debug_points){
+        dot.destroy();
     }
 
     for(let track of this.data){
