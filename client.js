@@ -8,14 +8,43 @@ const outwardVideo = document.getElementById('outward');
 const inwardKonvaDiv = document.getElementById('inward-konva-div');
 const outwardKonvaDiv = document.getElementById('outward-konva-div');
 
-    // Create Konva stages - client handles sizing and resizing
-    const inwardStage = new Konva.Stage({
-        container: inwardKonvaDiv,
-        width: inwardVideo.offsetWidth,
-        height: inwardVideo.offsetHeight,
+// Get pause both button element
+const pauseBothBtn = document.getElementById('pause-both-btn');
+// Add event listener for pause both button
+if (pauseBothBtn && inwardVideo && outwardVideo) {
+    pauseBothBtn.addEventListener('click', () => {
+        inwardVideo.pause();
+        outwardVideo.pause();
     });
+}
+
+// class annotations
+class Annotation {
+    constructor(videoElement, konvaStage, metadata = {}, visualizerNames = [], options = {}) {
+        this.videoElement = videoElement;
+        this.konvaStage = konvaStage;
+        this.metadata = metadata;
+        this.visualizerNames = visualizerNames;
+        this.options = options;
+
+        // Initialize the video annotator
+        this.videoAnnotator = new VideoAnnotator(
+            this.videoElement,
+            this.konvaStage,
+            this.metadata,
+            this.visualizerNames,
+            this.options
+        );
+    }
+}
+
+const inwardStage = new Konva.Stage({
+    container: inwardKonvaDiv,
+    width: inwardVideo.offsetWidth,
+    height: inwardVideo.offsetHeight,
+});
     
-    const outwardStage = new Konva.Stage({
+const outwardStage = new Konva.Stage({
         container: outwardKonvaDiv,
         width: outwardVideo.offsetWidth,
         height: outwardVideo.offsetHeight,
@@ -50,8 +79,9 @@ function setResizeListenersForKonvaResizing() {
     outwardResizeObserver.observe(outwardVideo);
 };
 
-function loadMetadata() {
-    return fetch('/assets/0/metadata.json')
+// Load and return metadata
+function loadMetadata(metadata_path) {
+    return fetch(metadata_path)
         .then(response => response.json())
         .then(data => {
             // console.log("Metadata loaded:", data);
@@ -63,9 +93,21 @@ function loadMetadata() {
         });
 }
 function initVideoAnnotators() {
+    //loads the metadata and initializes the annotators
+    const request_ids = ['486511cb-0a08-4295-b45a-e1bd0ec1e1db','14304e48-8f7d-4cc7-95cf-b60eefa0fe9a']
+    const baseDir = "/assets/symlink/nd-training-data-production/" + request_ids[0] + "/";
+    const inwardVideoPath = baseDir + 'inwardVideo.mp4';
+    const outwardVideoPath = baseDir + 'outwardVideo.mp4';
+    const metadataPath = baseDir + 'metadata.txt';
 
-    loadMetadata().then(metadata => {
+    console.log(inwardVideoPath);
+    console.log(outwardVideoPath);
+    console.log(metadataPath);
+    // set src for video elements
+    inwardVideo.src = inwardVideoPath;
+    outwardVideo.src = outwardVideoPath;
 
+    loadMetadata(metadataPath).then(metadata => {
     // Create annotators - they handle layer management and annotations
     inwardAnnotator = new VideoAnnotator(
         inwardVideo, 
@@ -87,8 +129,8 @@ function syncPlay() {
     const inward = document.getElementById('inward');
     const outward = document.getElementById('outward');
     
-    inward.currentTime = 0;
-    outward.currentTime = 0;
+    // inward.currentTime = 0;
+    // outward.currentTime = 0;
     
     inward.play();
     outward.play();

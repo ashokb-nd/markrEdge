@@ -461,7 +461,7 @@ class Header extends BaseVisualizer {
       });
       this.data = {
         currentSpeed: Math.round(closestGPSData.speed),
-        speedLimit: 10, // dummy 
+        speedLimit: 60, // dummy 
         timeZone: closestGPSData.timeZone || 'America/Los_Angeles' // dummy fallback
       };
 
