@@ -17,6 +17,7 @@
   "license": "ISC",
   "description": "markrEdge Node.js application",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "konva": "^9.3.22"
   }
 }
