@@ -19,24 +19,24 @@ if (pauseBothBtn && inwardVideo && outwardVideo) {
 }
 
 // class annotations
-class Annotation {
-    constructor(videoElement, konvaStage, metadata = {}, visualizerNames = [], options = {}) {
-        this.videoElement = videoElement;
-        this.konvaStage = konvaStage;
-        this.metadata = metadata;
-        this.visualizerNames = visualizerNames;
-        this.options = options;
+// class Annotation {
+//     constructor(videoElement, konvaStage, metadata = {}, visualizerNames = [], options = {}) {
+//         this.videoElement = videoElement;
+//         this.konvaStage = konvaStage;
+//         this.metadata = metadata;
+//         this.visualizerNames = visualizerNames;
+//         this.options = options;
 
-        // Initialize the video annotator
-        this.videoAnnotator = new VideoAnnotator(
-            this.videoElement,
-            this.konvaStage,
-            this.metadata,
-            this.visualizerNames,
-            this.options
-        );
-    }
-}
+//         // Initialize the video annotator
+//         this.videoAnnotator = new VideoAnnotator(
+//             this.videoElement,
+//             this.konvaStage,
+//             this.metadata,
+//             this.visualizerNames,
+//             this.options
+//         );
+//     }
+// }
 
 const inwardStage = new Konva.Stage({
     container: inwardKonvaDiv,
@@ -94,8 +94,15 @@ function loadMetadata(metadata_path) {
 }
 function initVideoAnnotators() {
     //loads the metadata and initializes the annotators
-    const request_ids = ['486511cb-0a08-4295-b45a-e1bd0ec1e1db','14304e48-8f7d-4cc7-95cf-b60eefa0fe9a']
-    const baseDir = "/assets/symlink/nd-training-data-production/" + request_ids[0] + "/";
+    const ids = ['486511cb-0a08-4295-b45a-e1bd0ec1e1db',
+        '14304e48-8f7d-4cc7-95cf-b60eefa0fe9a',
+        '9151731b-cdd6-48ae-afd3-abef5a0af338',
+        '486511cb-0a08-4295-b45a-e1bd0ec1e1db',
+        'abb26fa0-6dfa-4cc5-a90c-e8bcb68b3c30',
+        '7ce771f3-8c0f-409e-bb7b-0fc285745591',
+        'f33c2036-aaa1-4f5e-9c0f-91d6c0f54a14'
+    ]
+    const baseDir = "/assets/symlink/nd-training-data-production/" + ids[6] + "/";
     const inwardVideoPath = baseDir + 'inwardVideo.mp4';
     const outwardVideoPath = baseDir + 'outwardVideo.mp4';
     const metadataPath = baseDir + 'metadata.txt';
@@ -124,6 +131,17 @@ function initVideoAnnotators() {
     );
     });
 }
+
+function destroy_layers() {
+    if (inwardAnnotator) {
+        inwardAnnotator.destroy();
+    }
+    if (outwardAnnotator) {
+        outwardAnnotator.destroy();
+    }
+}
+window.destroy_layers = destroy_layers;
+window.initVideoAnnotators = initVideoAnnotators;
 
 function syncPlay() {
     const inward = document.getElementById('inward');

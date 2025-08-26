@@ -53,7 +53,7 @@ export class Multilane extends BaseVisualizer {
         const circle = new Konva.Circle({
             x: x,
             y: y,
-            radius: 2,
+            radius: 1,
             fill: colors[i],
             // stroke: 'black',
             // strokeWidth: 1
@@ -90,7 +90,7 @@ export class Multilane extends BaseVisualizer {
 
     const bezierCurve = new Konva.Line({
         points : this._format_bazier_points(lane, H, W),
-        stroke: 'red',
+        stroke: 'rgba(32, 103, 246, 0.90)',
         strokeWidth: 1,
         bezier: true
       });

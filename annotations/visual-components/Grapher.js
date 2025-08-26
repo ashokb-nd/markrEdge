@@ -1,12 +1,13 @@
 // Grapher class encapsulates all graph-related logic and elements
 class Grapher {
-  constructor(staticLayer, dynamicLayer, options, data, minTime, maxTime) {
+  constructor(staticLayer, dynamicLayer, options, data, minTime, maxTime, dsf_events) {
     this.staticLayer = staticLayer;
     this.dynamicLayer = dynamicLayer;
     this.options = options;
     this.data = data;
     this.minTime = null;
     this.maxTime = null;
+    this.dsf_events = dsf_events;
 
     this.graphBackground = new GraphBackground();
     this.dataCurves = new DataCurves();
@@ -88,6 +89,41 @@ class Grapher {
     if (timelineLine) {
       this.dynamicLayer.add(timelineLine);
     }
+
+    // TODO: Add DSF bars here.
+    this.addDSFBars();
+
+  }
+
+  addDSFBars() {
+    console.log('ckpt1', this.dsf_events);
+    let dsf_events = this.dsf_events || [];
+
+    // Iterate over the DSF events and create bars for each
+    dsf_events.forEach(event => {
+      // const bar = new DSFBar(event);
+
+      // Calculate normalized progress for the event start time
+      const videoProgress = TimelineIndicator.calculateVideoProgress(
+        event.start_timestamp +this.minTime,
+        this.minTime,
+        this.maxTime
+      );
+      const graphX = this.graphGroup.x();
+      const graphY = this.graphGroup.y();
+      const graphWidth = this.graphGroup.width();
+      const graphHeight = this.graphGroup.height();
+      const barX = graphX + (videoProgress * graphWidth);
+
+      console.log('ckpt2', event);
+      const bar = new Konva.Line({
+        points: [barX, graphY, barX, graphY + graphHeight],
+        stroke: "#ff0000",
+        strokeWidth: 1,
+        opacity: 0.8
+      });
+      this.staticLayer.add(bar);
+    });
   }
 
   updateTimeline(epochTime, graphWidth, graphHeight) {

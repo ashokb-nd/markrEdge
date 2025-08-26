@@ -60,6 +60,12 @@ class VideoAnnotator {
     this._setupEventListeners();
   }
 
+  destroy() {
+    // destroy layers
+    this.staticLayer.destroy();
+    this.dynamicLayer.destroy();
+  }
+
   _initLayers() {
     // Create static layer for persistent annotations, UI elements
     this.staticLayer = new Konva.Layer();

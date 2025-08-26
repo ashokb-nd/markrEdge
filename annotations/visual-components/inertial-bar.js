@@ -90,6 +90,24 @@ class InertialBar extends BaseVisualizer {
 
     // window.pil_data = PIL_data;
     // Create inertial bar data structure
+
+
+    //extract dsf events
+    //  metadata->inference_data->events_data->alerts.
+
+    let events = metadata?.inference_data?.events_data?.alerts || [];
+    let dsf_events = [];
+
+// event_code
+// : 
+    const DSF_EVENT_CODE = "900.0.1.0";
+    for (let event of events) {
+      if (event.event_code === DSF_EVENT_CODE) {
+        dsf_events.push(event);
+      }
+    }
+    console.log("Extracted events:", dsf_events);
+
     return {
       //Graphs
       graphs:{
@@ -123,6 +141,7 @@ class InertialBar extends BaseVisualizer {
       // timeValues: timeValues,
       // lateralValues: acc2,  // Use acc2 for lateral
       // drivingValues: acc3   // Use acc3 for driving
+      dsf_events: dsf_events
     };
   }
 
@@ -183,13 +202,15 @@ class InertialBar extends BaseVisualizer {
     const graphX = W * 0.05;
     const graphY = H - graphHeight - (H * 0.02);
     if (!this.grapher) {
+      console.log("metadata:", this.metadata);
       this.grapher = new Grapher(
         this.staticLayer,
         this.dynamicLayer,
         this.options,
         this.data,
         this.minTime,
-        this.maxTime
+        this.maxTime,
+        this.data.dsf_events,
       );
       this.grapher.createElements(graphX, graphY, graphWidth, graphHeight, epochTime);
       // Add demo markers
