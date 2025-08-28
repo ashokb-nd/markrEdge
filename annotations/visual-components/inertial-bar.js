@@ -9,7 +9,7 @@ class InertialBar extends BaseVisualizer {
     this.options = {
       Opacity: 0.95,
       BackgroundColor: "#1a1a1a", // Dark charcoal
-      BackgroundOpacity: 0.5, // Even more transparent background
+      BackgroundOpacity: 0.95, // Even more transparent background
       BorderColor: "rgba(74, 144, 226, 0.5)", // Semi-transparent blue border
       BorderWidth: 1,
       GridColor: "#ffffff", // White grid lines
@@ -33,7 +33,8 @@ class InertialBar extends BaseVisualizer {
 
     if (!sensorMetaData || !Array.isArray(sensorMetaData)) {
       // Return dummy data for testing
-      return this.generateDummyData(100);
+      // return this.generateDummyData(100);
+      return {};
     }
 
     // Initialize arrays for accelerometer data
@@ -95,6 +96,7 @@ class InertialBar extends BaseVisualizer {
     //extract dsf events
     //  metadata->inference_data->events_data->alerts.
 
+    let startTime = metadata.startTime || null;
     let events = metadata?.inference_data?.events_data?.alerts || [];
     let dsf_events = [];
 
@@ -141,7 +143,8 @@ class InertialBar extends BaseVisualizer {
       // timeValues: timeValues,
       // lateralValues: acc2,  // Use acc2 for lateral
       // drivingValues: acc3   // Use acc3 for driving
-      dsf_events: dsf_events
+      dsf_events: dsf_events,
+      startTime: startTime
     };
   }
 
@@ -197,9 +200,9 @@ class InertialBar extends BaseVisualizer {
 
   display(epochTime, H, W) {
     if (!this.data) return;
-    const graphWidth = W * 0.9;
-    const graphHeight = H * 0.15;
-    const graphX = W * 0.05;
+    const graphWidth = W * 0.95;
+    const graphHeight = H * 0.13;
+    const graphX = W * 0.025;
     const graphY = H - graphHeight - (H * 0.02);
     if (!this.grapher) {
       console.log("metadata:", this.metadata);
@@ -211,6 +214,7 @@ class InertialBar extends BaseVisualizer {
         this.minTime,
         this.maxTime,
         this.data.dsf_events,
+        this.data.startTime
       );
       this.grapher.createElements(graphX, graphY, graphWidth, graphHeight, epochTime);
       // Add demo markers

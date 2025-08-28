@@ -16,6 +16,7 @@ class Debug extends BaseVisualizer {
 
   display(epochTime, H, W) {
     // Create debug cross only once and cache it
+    console.log("Displaying debug overlay with dimensions:", W, H);
     if (!this.debugCross) {
 
       // Common properties for all debug elements

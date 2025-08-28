@@ -64,6 +64,13 @@ class VideoAnnotator {
     // destroy layers
     this.staticLayer.destroy();
     this.dynamicLayer.destroy();
+
+    // Cancel the video frame callback if it exists
+    if (this._videoFrameCallbackHandle !== undefined) {
+      this.video.cancelVideoFrameCallback(this._videoFrameCallbackHandle);
+      this._videoFrameCallbackHandle = undefined;
+    }
+    // remove event listeners
   }
 
   _initLayers() {
@@ -105,11 +112,10 @@ class VideoAnnotator {
     const renderFrame = () => {
       this._render();
       // Schedule next frame
-      this.video.requestVideoFrameCallback(renderFrame);
+      this._videoFrameCallbackHandle = this.video.requestVideoFrameCallback(renderFrame);
     };
-    renderFrame(); // for video preview
     // Start the frame callback loop
-    this.video.requestVideoFrameCallback(renderFrame);
+    this._videoFrameCallbackHandle = this.video.requestVideoFrameCallback(renderFrame);
 
     // Handle resize
     // window.addEventListener('resize', () => {

@@ -1,6 +1,6 @@
 // Grapher class encapsulates all graph-related logic and elements
 class Grapher {
-  constructor(staticLayer, dynamicLayer, options, data, minTime, maxTime, dsf_events) {
+  constructor(staticLayer, dynamicLayer, options, data, minTime, maxTime, dsf_events, startTime) {
     this.staticLayer = staticLayer;
     this.dynamicLayer = dynamicLayer;
     this.options = options;
@@ -8,6 +8,7 @@ class Grapher {
     this.minTime = null;
     this.maxTime = null;
     this.dsf_events = dsf_events;
+    this.startTime = startTime;
 
     this.graphBackground = new GraphBackground();
     this.dataCurves = new DataCurves();
@@ -33,8 +34,8 @@ class Grapher {
         const stage = this.getStage();
         const stageWidth = stage.width();
         const stageHeight = stage.height();
-        const minX = stageWidth * 0.05;
-        const maxX = stageWidth * 0.95 - graphWidth;
+        const minX = stageWidth * 0.025;
+        const maxX = stageWidth * 0.975 - graphWidth;
         const minY = 0;
         const maxY = stageHeight - graphHeight - (stageHeight * 0.02);
         return {
@@ -96,7 +97,7 @@ class Grapher {
   }
 
   addDSFBars() {
-    console.log('ckpt1', this.dsf_events);
+    console.log('dsf events detected.', this.dsf_events);
     let dsf_events = this.dsf_events || [];
 
     // Iterate over the DSF events and create bars for each
@@ -104,8 +105,9 @@ class Grapher {
       // const bar = new DSFBar(event);
 
       // Calculate normalized progress for the event start time
+      console.log("difference between mintime, starttime", this.minTime, this.startTime);
       const videoProgress = TimelineIndicator.calculateVideoProgress(
-        event.start_timestamp +this.minTime,
+        event.start_timestamp + this.startTime,
         this.minTime,
         this.maxTime
       );
@@ -115,7 +117,6 @@ class Grapher {
       const graphHeight = this.graphGroup.height();
       const barX = graphX + (videoProgress * graphWidth);
 
-      console.log('ckpt2', event);
       const bar = new Konva.Line({
         points: [barX, graphY, barX, graphY + graphHeight],
         stroke: "#ff0000",
